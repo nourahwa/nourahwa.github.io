@@ -453,51 +453,95 @@
     function stopAll() { stops.forEach(function (s) { s(); }); stops = []; }
     w.onClose(stopAll);
     w.body.appendChild(view);
-    var tWall = w.tool(T("Wall", "الحائط")), tDraw = w.tool(T("Draw", "ارسم")), tInbox = null;
-    function mark(b) { [tWall, tDraw, tInbox].forEach(function (x) { if (x) x.className = x === b ? "on" : ""; }); }
-    tWall.addEventListener("click", wall); tDraw.addEventListener("click", draw);
+    var tWall = w.tool(T("Wall", "الحائط")), tDraw = w.tool(T("Draw", "ارسم")), tWrite = w.tool(T("Write", "اكتب")), tInbox = null;
+    function mark(b) { [tWall, tDraw, tWrite, tInbox].forEach(function (x) { if (x) x.className = x === b ? "on" : ""; }); }
+    tWall.addEventListener("click", wall); tDraw.addEventListener("click", draw); tWrite.addEventListener("click", write);
     STORE.ready.then(function () { if (STORE.db && STORE.owner) { tInbox = w.tool(T("Inbox", "الوارد")); tInbox.addEventListener("click", inbox); } });
+
+    /* name, where from, and the post button: the same for drawing and writing */
+    function postForm(withHi) {
+      var form = el("form", "sn-form" + (withHi ? "" : " short")), hp = trap();
+      var name = field("snName", T("Name (optional)", "الاسم (اختياري)"), 40), place = field("snPlace", T("Where from? (optional)", "من وين؟ (اختياري)"), 40);
+      var hi = withHi ? field("snHi", T("Say hi (optional)", "قل مرحبا (اختياري)"), 300) : null;
+      try { name.value = localStorage.getItem("desk-name") || ""; } catch (e) { /* empty */ }
+      var send = el("button", "sn-post", T("post ↗", "أرسل ↗")); send.type = "submit";
+      [name, place, hi].forEach(function (x) { if (x) form.appendChild(x); });
+      form.appendChild(send); form.appendChild(hp);
+      return { form: form, name: name, place: place, hi: hi, send: send, trap: hp };
+    }
+    async function post(f, info, entry, done) {
+      if (!canSend()) { info.textContent = T("Sending is not available right now.", "الإرسال مو متاح حاليًا."); return; }
+      if (f.trap.value) { info.textContent = T("Posted. Thank you!", "تم الإرسال، شكرًا لك!"); return; }
+      if (!useDb() && tooSoon("note")) { info.textContent = T("Please wait a few seconds before sending again.", "انتظر ثواني قبل ما ترسل مرة ثانية."); return; }
+      entry.id = newId(); entry.at = Date.now();
+      entry.name = clean(f.name.value, 40) || T("Guest", "زائر"); entry.place = clean(f.place.value, 40);
+      try { if (clean(f.name.value, 40)) localStorage.setItem("desk-name", entry.name); } catch (err) { /* not remembered */ }
+      f.send.disabled = true; info.textContent = T("Sending...", "جاري الإرسال...");
+      try {
+        var summary = { name: entry.name, from: entry.place || "-", note: entry.text || "(a drawing)" };
+        if (useDb()) await append("notes", entry, 8);
+        else if (sb()) {
+          await sbAdd(entry);
+          emailMe("New sticky note waiting for approval", summary).catch(function () {});
+          lastSend.note = Date.now();
+        } else await emailMe("New sticky note from " + entry.name, summary, entry.img);
+        local("desk-mynotes", { name: entry.name, place: entry.place, text: entry.text, at: entry.at }, 4);
+        info.textContent = T("Posted! It shows on the wall once I approve it. Thank you!", "تم الإرسال! يطلع في الحائط بعد الموافقة. شكرًا لك!");
+        if (window.BADGES) window.BADGES.give("note");
+        done();
+      } catch (err) {
+        info.textContent = err && err.code === "wait" ? T("Please wait a few seconds before sending again.", "انتظر ثواني قبل ما ترسل مرة ثانية.") : err && err.code === "busy" ? T("The wall is busy right now. Try again later.", "الحائط مزحوم حاليًا، جرّب بعدين.") : T("Could not send. Try again in a moment.", "ما تم الإرسال، جرّب بعد شوي.");
+      }
+      f.send.disabled = false;
+    }
 
     function draw() {
       stopAll(); mark(tDraw); view.innerHTML = "";
       var p = pad(); view.appendChild(p.node);
-      var form = el("form", "sn-form"), hp = trap();
-      var name = field("snName", T("Name (optional)", "الاسم (اختياري)"), 40), place = field("snPlace", T("Where from? (optional)", "من وين؟ (اختياري)"), 40), hi = field("snHi", T("Say hi (optional)", "قل مرحبا (اختياري)"), 300);
-      try { name.value = localStorage.getItem("desk-name") || ""; } catch (e) { /* empty */ }
-      var acts = el("div", "sn-acts"), un = button("↶", "sn-mini"), cl = button(T("Clear", "مسح"), "sn-mini"), send = el("button", "sn-post", T("post ↗", "أرسل ↗")); send.type = "submit";
+      var f = postForm(true);
+      var acts = el("div", "sn-acts"), un = button("↶", "sn-mini"), cl = button(T("Clear", "مسح"), "sn-mini");
       un.setAttribute("aria-label", T("Undo", "تراجع"));
       un.addEventListener("click", p.undo); cl.addEventListener("click", p.clear);
       acts.appendChild(un); acts.appendChild(cl);
-      [name, place, hi].forEach(function (x) { form.appendChild(x); });
-      form.appendChild(send); form.appendChild(hp);
       var info = el("p", "sn-hint", T("Draw a little sticky, pick a paper, add your name and say hi. It shows on the wall once I approve it.", "ارسم ستيكي صغير، واختر الورق، واكتب اسمك وقل مرحبا. يطلع في الحائط بعد ما أوافق عليه."));
-      view.appendChild(acts); view.appendChild(form); view.appendChild(info);
-      form.addEventListener("submit", async function (e) {
+      view.appendChild(acts); view.appendChild(f.form); view.appendChild(info);
+      f.form.addEventListener("submit", function (e) {
         e.preventDefault();
-        if (!canSend()) { info.textContent = T("Sending is not available right now.", "الإرسال مو متاح حاليًا."); return; }
-        var who = clean(name.value, 40) || T("Guest", "زائر"), from = clean(place.value, 40), say = String(hi.value || "").trim().slice(0, 300);
+        var say = String(f.hi.value || "").trim().slice(0, 300);
         if (!p.drew() && !say) { info.textContent = T("Draw something or say hi first.", "ارسم شي أو قل مرحبا أول."); return; }
-        if (hp.value) { info.textContent = T("Posted. Thank you!", "تم الإرسال، شكرًا لك!"); return; }
-        if (!useDb() && tooSoon("note")) { info.textContent = T("Please wait a few seconds before sending again.", "انتظر ثواني قبل ما ترسل مرة ثانية."); return; }
-        var entry = { id: newId(), name: who, place: from, text: say, at: Date.now() };
-        if (p.drew()) entry.img = p.image();
-        try { if (clean(name.value, 40)) localStorage.setItem("desk-name", who); } catch (err) { /* not remembered */ }
-        send.disabled = true; info.textContent = T("Sending...", "جاري الإرسال...");
-        try {
-          if (useDb()) await append("notes", entry, 8);
-          else if (sb()) {
-            await sbAdd(entry);
-            emailMe("New sticky note waiting for approval", { name: who, from: from || "-", note: say || "(a drawing)" }).catch(function () {});
-            lastSend.note = Date.now();
-          } else await emailMe("New sticky note from " + who, { name: who, from: from || "-", note: say || "(drawing attached)" }, entry.img);
-          local("desk-mynotes", { name: who, place: from, text: say, at: entry.at }, 4);
-          info.textContent = T("Posted! It shows on the wall once I approve it. Thank you!", "تم الإرسال! يطلع في الحائط بعد الموافقة. شكرًا لك!");
-          if (window.BADGES) window.BADGES.give("note");
-          p.clear(); hi.value = "";
-        } catch (err) {
-          info.textContent = err && err.code === "wait" ? T("Please wait a few seconds before sending again.", "انتظر ثواني قبل ما ترسل مرة ثانية.") : err && err.code === "busy" ? T("The wall is busy right now. Try again later.", "الحائط مزحوم حاليًا، جرّب بعدين.") : T("Could not send. Try again in a moment.", "ما تم الإرسال، جرّب بعد شوي.");
-        }
-        send.disabled = false;
+        var entry = { text: say }; if (p.drew()) entry.img = p.image();
+        post(f, info, entry, function () { p.clear(); f.hi.value = ""; });
+      });
+    }
+
+    /* a written note on a small sticky: pick the paper, type, post */
+    function write() {
+      stopAll(); mark(tWrite); view.innerHTML = "";
+      var wrap = el("div", "sn-write"), card = el("div", "sn-card"), text = el("textarea", "sn-paper");
+      text.id = "snText"; text.maxLength = 600; text.dir = "auto";
+      text.placeholder = T("Write me a note...", "اكتب لي ملاحظة...");
+      text.setAttribute("aria-label", T("Your note", "ملاحظتك"));
+      var count = el("small", "sn-left", "600");
+      text.addEventListener("input", function () { count.textContent = String(600 - text.value.length); });
+      card.appendChild(text); card.appendChild(count);
+      var papers = el("div", "sn-paperbar");
+      papers.appendChild(el("span", "sn-label", T("PAPER", "الورق")));
+      ["#FFFDF8", "#FBF3E4", "#FBE4E8", "#E6EEF8", "#E4F2EA", "#EEE8F8", "#FCF1CF"].forEach(function (c, i) {
+        var b = button("", "sn-pp" + (i ? "" : " on")); b.style.background = c; b.setAttribute("aria-label", c);
+        b.addEventListener("click", function () { card.style.background = c; papers.querySelectorAll(".sn-pp").forEach(function (x) { x.classList.toggle("on", x === b); }); });
+        papers.appendChild(b);
+      });
+      wrap.appendChild(card); wrap.appendChild(papers);
+      view.appendChild(wrap);
+      var f = postForm(false);
+      var info = el("p", "sn-hint", T("Write a few words, add your name and where you are from. It shows on the wall once I approve it.", "اكتب كم كلمة، واسمك ومن وين أنت. تطلع في الحائط بعد ما أوافق عليها."));
+      view.appendChild(f.form); view.appendChild(info);
+      setTimeout(function () { text.focus(); }, 50);
+      f.form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var say = String(text.value || "").trim().slice(0, 600);
+        if (!say) { text.focus(); info.textContent = T("Write something first.", "اكتب شي أول."); return; }
+        post(f, info, { text: say }, function () { text.value = ""; count.textContent = "600"; });
       });
     }
 
@@ -510,7 +554,9 @@
       stopAll(); mark(tWall); view.innerHTML = "";
       var head = el("div", "sn-wallhead"), count = el("p", "sn-count"), list = el("div", "sn-list"), status = el("p", "sn-empty", T("Loading...", "جاري التحميل..."));
       head.appendChild(count);
-      var go = button(T("+ Draw a note", "+ ارسم ملاحظة"), "sn-post"); go.addEventListener("click", draw); head.appendChild(go);
+      var btns = el("div", "sn-acts2"), goW = button(T("+ Write", "+ اكتب"), "sn-post"), goD = button(T("+ Draw", "+ ارسم"), "sn-mini");
+      goW.addEventListener("click", write); goD.addEventListener("click", draw);
+      btns.appendChild(goD); btns.appendChild(goW); head.appendChild(btns);
       view.appendChild(head); view.appendChild(status); view.appendChild(list);
       function paint(rows) {
         list.innerHTML = "";

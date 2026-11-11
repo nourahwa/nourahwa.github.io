@@ -31,11 +31,15 @@
   function svg(body) { return '<svg viewBox="0 0 64 64" aria-hidden="true">' + body + "</svg>"; }
   var ICONS = {
     sticky: function () {
-      var g = uid("i");
-      return svg(tileBg(g, "#F6B7C1", "#E58A9E") + '<rect x="17" y="18" width="30" height="30" rx="3" fill="#FFF6C9" transform="rotate(-4 32 33)"/>' +
-        '<path d="M22 31c4-4 8 3 12-1s6-3 8 0" fill="none" stroke="#E0607E" stroke-width="2.2" stroke-linecap="round" transform="rotate(-4 32 33)"/>' +
-        '<path d="M23 39h14" stroke="#C9B87A" stroke-width="2" stroke-linecap="round" transform="rotate(-4 32 33)"/>' +
-        '<rect x="25" y="13" width="14" height="8" rx="1" fill="#FFFFFF" opacity=".75" transform="rotate(6 32 17)"/>');
+      /* two soft sticky notes, off-white and blush, with a strip of tape: calm and modern */
+      var g = uid("i"), sh = uid("s");
+      return svg('<defs><linearGradient id="' + g + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBF8F1"/><stop offset="1" stop-color="#EFE9DC"/></linearGradient>' +
+        '<filter id="' + sh + '" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1.5" stdDeviation="1.4" flood-color="#5B4E36" flood-opacity=".18"/></filter></defs>' +
+        '<rect x="4" y="4" width="56" height="56" rx="14" fill="url(#' + g + ')"/>' +
+        '<rect x="20" y="15" width="28" height="28" rx="3.5" fill="#F3D9D2" transform="rotate(8 34 29)" filter="url(#' + sh + ')"/>' +
+        '<rect x="15" y="20" width="29" height="29" rx="3.5" fill="#FFFDF8" transform="rotate(-5 29.5 34.5)" filter="url(#' + sh + ')"/>' +
+        '<g transform="rotate(-5 29.5 34.5)" stroke-linecap="round"><path d="M20 31h17" stroke="#C9BFAE" stroke-width="1.8"/><path d="M20 36h13" stroke="#D7CEBF" stroke-width="1.8"/><path d="M20 41h9" stroke="#D7CEBF" stroke-width="1.8"/></g>' +
+        '<rect x="23" y="16.5" width="13" height="6" rx="1" fill="#E7C9A0" opacity=".75" transform="rotate(-11 29.5 19.5)"/>');
     },
     notes: function () {
       var g = uid("n");

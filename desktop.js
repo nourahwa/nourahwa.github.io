@@ -370,16 +370,41 @@
     $("soundBtn").setAttribute("aria-label", sound ? T("Sound on", "الصوت شغّال") : T("Sound off", "الصوت مطفي"));
     $("soundBtn").title = $("soundBtn").getAttribute("aria-label");
   }
+  /* a short soft "tick", made from a little filtered noise. Phones only allow sound after a tap, so the
+     first tap unlocks it; on an iPhone a silent clip also lets it play when the ringer switch is off */
+  var tickBuf = null, unlocked = false;
+  function ctx() {
+    if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+    if (audio.state === "suspended") audio.resume();
+    return audio;
+  }
+  function unlock() {
+    if (unlocked) return; unlocked = true;
+    try {
+      var n = 800, b = new ArrayBuffer(44 + n * 2), v = new DataView(b);
+      [[0, 0x52494646], [8, 0x57415645], [12, 0x666d7420], [36, 0x64617461]].forEach(function (x) { v.setUint32(x[0], x[1]); });
+      v.setUint32(4, 36 + n * 2, true); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+      v.setUint32(24, 16000, true); v.setUint32(28, 32000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); v.setUint32(40, n * 2, true);
+      var el2 = new Audio(URL.createObjectURL(new Blob([b], { type: "audio/wav" })));
+      el2.setAttribute("playsinline", ""); var pr = el2.play(); if (pr && pr.catch) pr.catch(function () {});
+    } catch (e) { /* not needed here */ }
+  }
   function click() {
     if (!sound) return;
     try {
-      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
-      var t = audio.currentTime, o = audio.createOscillator(), g = audio.createGain();
-      o.type = "triangle"; o.frequency.setValueAtTime(1500, t); o.frequency.exponentialRampToValueAtTime(600, t + 0.04);
-      g.gain.setValueAtTime(0.05, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
-      o.connect(g); g.connect(audio.destination); o.start(t); o.stop(t + 0.07);
+      var a = ctx(), t = a.currentTime;
+      if (!tickBuf) {
+        var len = Math.floor(a.sampleRate * 0.03); tickBuf = a.createBuffer(1, len, a.sampleRate);
+        var d = tickBuf.getChannelData(0);
+        for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 4);
+      }
+      var src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+      src.buffer = tickBuf; f.type = "bandpass"; f.frequency.value = 2400; f.Q.value = 0.9;
+      g.gain.setValueAtTime(0.55, t);
+      src.connect(f); f.connect(g); g.connect(a.destination); src.start(t);
     } catch (e) { /* no sound here */ }
   }
+  ["pointerdown", "touchend", "keydown"].forEach(function (k) { window.addEventListener(k, function () { if (sound) { unlock(); try { ctx(); } catch (e) { /* none */ } } }, { once: true, passive: true }); });
   $("soundBtn").addEventListener("click", function () { sound = !sound; try { localStorage.setItem("desk-sound", sound ? "on" : "off"); } catch (e) { /* not remembered */ } soundIcon(); click(); });
   document.addEventListener("pointerdown", function (e) { if (e.target.closest("button,a,.tile")) click(); });
 
