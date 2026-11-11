@@ -1,0 +1,127 @@
+{
+  "updated": "2026-11-11T17:21:23+00:00",
+  "repos": [
+    {
+      "name": "olist-delivery-impact",
+      "description": "How late delivery lowers customer ratings: SQL, statistics, a prediction model and a Tableau dashboard",
+      "language": "Python",
+      "topics": [
+        "business-analysis",
+        "data-analysis",
+        "e-commerce",
+        "machine-learning",
+        "python",
+        "sql",
+        "statistics",
+        "tableau"
+      ],
+      "image": "https://raw.githubusercontent.com/inourahwahaq/olist-delivery-impact/main/dashboard/dashboard.png",
+      "url": "https://github.com/inourahwahaq/olist-delivery-impact",
+      "pushed": "2026-11-10T02:15:03Z"
+    },
+    {
+      "name": "global-layoffs-monitor",
+      "description": "Global layoffs analysis with data audit, forecast and Tableau dashboard",
+      "language": "Python",
+      "topics": [
+        "data-analysis",
+        "data-quality",
+        "excel",
+        "forecasting",
+        "python",
+        "tableau"
+      ],
+      "image": "https://raw.githubusercontent.com/inourahwahaq/global-layoffs-monitor/main/dashboard/dashboard.jpg",
+      "url": "https://github.com/inourahwahaq/global-layoffs-monitor",
+      "pushed": "2026-11-09T22:46:42Z"
+    },
+    {
+      "name": "saudi-court-sessions-sql",
+      "description": "SQL analysis of 1.89 million Saudi court sessions with a Tableau dashboard",
+      "language": "Python",
+      "topics": [
+        "data-analysis",
+        "saudi-arabia",
+        "sql",
+        "sqlite",
+        "tableau"
+      ],
+      "image": "https://raw.githubusercontent.com/inourahwahaq/saudi-court-sessions-sql/main/dashboard/dashboard.jpg",
+      "url": "https://github.com/inourahwahaq/saudi-court-sessions-sql",
+      "pushed": "2026-11-09T22:46:21Z"
+    },
+    {
+      "name": "saudi-real-estate-analysis",
+      "description": "Saudi real estate deals analysis with Python, Excel and Tableau",
+      "language": "Python",
+      "topics": [
+        "data-analysis",
+        "excel",
+        "python",
+        "real-estate",
+        "saudi-arabia",
+        "tableau"
+      ],
+      "image": "https://raw.githubusercontent.com/inourahwahaq/saudi-real-estate-analysis/main/dashboard/dashboard.jpg",
+      "url": "https://github.com/inourahwahaq/saudi-real-estate-analysis",
+      "pushed": "2026-11-09T22:46:00Z"
+    },
+    {
+      "name": "ev-global-sales-analysis",
+      "description": "Global electric car sales analysis with Python, Excel and Tableau",
+      "language": "Python",
+      "topics": [
+        "data-analysis",
+        "electric-vehicles",
+        "excel",
+        "python",
+        "tableau"
+      ],
+      "image": "https://raw.githubusercontent.com/inourahwahaq/ev-global-sales-analysis/main/dashboard/dashboard.jpg",
+      "url": "https://github.com/inourahwahaq/ev-global-sales-analysis",
+      "pushed": "2026-11-09T22:44:40Z"
+    },
+    {
+      "name": "retail-sales-performance-analysis",
+      "description": "Retail Sales Performance Analysis using Python and Power BI",
+      "language": "Python",
+      "topics": [
+        "data-analysis",
+        "pandas",
+        "power-bi",
+        "python",
+        "retail"
+      ],
+      "image": "https://raw.githubusercontent.com/inourahwahaq/retail-sales-performance-analysis/main/dashboard.png",
+      "url": "https://github.com/inourahwahaq/retail-sales-performance-analysis",
+      "pushed": "2026-11-09T22:24:12Z"
+    },
+    {
+      "name": "sql-insurance-analysis",
+      "description": "SQL data analysis project exploring customer behavior and insurance response using MySQL.",
+      "language": "",
+      "topics": [
+        "data-analysis",
+        "mysql",
+        "sql"
+      ],
+      "image": "",
+      "url": "https://github.com/inourahwahaq/sql-insurance-analysis",
+      "pushed": "2026-11-09T22:08:11Z"
+    },
+    {
+      "name": "Medical-Insurance-Cost-Analysis",
+      "description": "Medical Insurance Cost Analysis using Excel Dashboard",
+      "language": "",
+      "topics": [
+        "dashboard",
+        "data-analysis",
+        "excel",
+        "pivot-tables"
+      ],
+      "image": "https://raw.githubusercontent.com/inourahwahaq/Medical-Insurance-Cost-Analysis/main/dashboard.png",
+      "url": "https://github.com/inourahwahaq/Medical-Insurance-Cost-Analysis",
+      "pushed": "2026-11-09T22:08:05Z"
+    }
+  ]
+}

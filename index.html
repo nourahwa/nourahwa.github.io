@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://gc.zgo.at; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://raw.githubusercontent.com https://*.githubusercontent.com https://github.com; media-src 'self'; connect-src 'self' https://formsubmit.co https://api.open-meteo.com https://*.goatcounter.com https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self' https://formsubmit.co; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nourah WA | Data Analyst</title>
+<meta name="description" content="Data analysis portfolio">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@300&family=Inter:wght@200;300;400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600&display=swap">
+<link rel="stylesheet" href="shared/base.css">
+<link rel="stylesheet" href="desktop.css">
+</head>
+<body>
+
+<div class="login" id="login" hidden>
+  <div class="login-clock">
+    <p class="login-date" id="loginDate"></p>
+    <p class="login-time"><span id="loginTime"></span><small id="loginAmPm"></small></p>
+  </div>
+  <canvas class="sunrise" id="sunrise" aria-hidden="true"></canvas>
+  <div class="login-user">
+    <div class="avatar big" id="loginAvatar"></div>
+    <p class="login-name" id="loginName"></p>
+    <button class="login-go" id="loginGo" type="button"></button>
+    <p class="login-hint" id="loginHint"></p>
+  </div>
+</div>
+
+<main id="home" class="desk">
+  <header class="menubar">
+    <div class="mb-left">
+      <button class="sun-btn" id="sunBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="sunMenu"></button>
+      <button class="mb-name" id="mbName" type="button"></button>
+      <button class="mb-icon mb-term" id="termBtn" type="button" aria-expanded="false" aria-controls="codePanel">&gt;_</button>
+      <button class="mb-text" id="helpBtn" type="button"></button>
+      <div class="sun-menu" id="sunMenu" hidden></div>
+    </div>
+    <div class="mb-right">
+      <button class="mb-item mb-prog" id="progBtn" type="button" aria-haspopup="true" aria-expanded="false"></button>
+      <div class="prog-menu" id="progMenu" hidden></div>
+      <span class="mb-item" id="weather" hidden></span>
+      <span class="mb-item" id="mbDate"></span>
+      <span class="mb-item" id="mbTime"></span>
+      <button class="mb-icon" id="soundBtn" type="button"></button>
+      <span id="langSlot"></span>
+    </div>
+  </header>
+
+  <aside class="palette" id="palette" aria-label="Background"></aside>
+
+  <section class="intro">
+    <div class="avatar" id="avatar"></div>
+    <div class="intro-text">
+      <p class="intro-name" id="introName"></p>
+      <p class="intro-role" id="introRole"></p>
+      <p class="intro-bio" id="introBio"></p>
+    </div>
+  </section>
+
+  <aside class="codepanel" id="codePanel" hidden aria-label="about_me.py">
+    <header class="cp-bar">
+      <span class="lights"><button class="win-close" id="cpClose" type="button"></button><i></i><i></i></span>
+      <span class="cp-file">about_me.py</span>
+      <button class="cp-run" id="cpRun" type="button">Run ▶</button>
+    </header>
+    <pre class="me-code" id="cpCode"></pre>
+    <div class="me-term" id="cpTerm"></div>
+  </aside>
+
+  <nav class="icons" id="icons" aria-label="Apps"></nav>
+
+  <footer class="dock-wrap">
+    <div class="dock" id="dock"></div>
+    <p class="copy" id="copy"></p>
+  </footer>
+  <p class="toast" id="toast" role="status" hidden></p>
+</main>
+
+<div class="ink" id="ink" hidden aria-hidden="true"></div>
+<div class="saver" id="saver" hidden aria-hidden="true"></div>
+
+<div class="layer" id="layer" hidden>
+  <section class="win" id="win" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+    <header class="win-bar">
+      <span class="lights"><button class="win-close" id="winClose" type="button"></button><i></i><i></i></span>
+      <h2 class="win-title" id="winTitle"></h2>
+      <span class="win-tools" id="winTools"></span>
+    </header>
+    <div class="win-body" id="winBody"></div>
+  </section>
+</div>
+
+<article id="detail" class="detail" hidden></article>
+
+<script src="site/content/settings.js"></script>
+<script src="site/content/projects.js"></script>
+<script src="shared/pixel.js"></script>
+<script src="shared/core.js"></script>
+<script src="config.js"></script>
+<script src="sqldata.js"></script>
+<script src="art.js"></script>
+<script src="apps.js"></script>
+<script src="apps2.js"></script>
+<script src="desktop.js"></script>
+</body>
+</html>
