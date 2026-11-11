@@ -65,6 +65,21 @@ for r in repos:
     })
 rows.sort(key=lambda r: r["pushed"], reverse=True)
 
+# the Notebook reads notes/index.json when the GitHub API is busy: keep it in step with the notes folder
+if os.path.isdir("notes"):
+    names = sorted(f for f in os.listdir("notes") if f.endswith(".md") and f.lower() != "readme.md")
+    path = os.path.join("notes", "index.json")
+    old = None
+    try:
+        with open(path, encoding="utf-8") as f:
+            old = json.load(f)
+    except (FileNotFoundError, ValueError):
+        pass
+    if old != names:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(names, f, ensure_ascii=False, indent=2)
+        print(f"{len(names)} notes listed in notes/index.json")
+
 # only write when something changed, so the site is not republished for nothing
 try:
     with open("repos.json", encoding="utf-8") as f:

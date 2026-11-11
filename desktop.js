@@ -501,13 +501,14 @@
   /* ---------- desktop ---------- */
   var ICONS = [
     ["projects", function () { return A.folder(false); }, "Projects", "المشاريع"],
-    ["notes", function () { return A.icon("notes"); }, "Notes", "الملاحظات"],
+    ["notebook", function () { return A.icon("notes"); }, "Notebook", "المذكرات"],
+    ["sticky", function () { return A.icon("sticky"); }, "Sticky Notes", "ملاحظات الزوار"],
     ["resume", function () { return A.icon("resume"); }, "CV", "السيرة الذاتية"],
     ["sudoku", function () { return A.icon("sudoku"); }, "Sudoku", "سودوكو"],
     ["lab", function () { return A.icon("lab"); }, "Data lab", "مختبر البيانات"],
     ["contact", function () { return A.icon("mail"); }, "Contact", "تواصل"]
   ];
-  var DOCK = ["excel", "sql", "python", "powerbi", "tableau", "|", "notion", "claude", "chatgpt"];
+  var DOCK = ["excel", "sql", "python", "powerbi", "tableau", "|", "figma", "framer", "|", "notion", "claude", "chatgpt"];
 
   function render() {
     $("sunBtn").innerHTML = A.sun();
@@ -542,8 +543,9 @@
     $("loginGo").textContent = T("Enter →", "دخول ←");
     $("loginHint").textContent = T("No password. Click to enter.", "بدون كلمة مرور، اضغط للدخول.");
     $("introName").textContent = S.name;
-    $("introRole").textContent = T("DATA ANALYST · GRAPHIC DESIGNER", "محللة بيانات · مصممة جرافيك");
-    $("introBio").textContent = T("I care about two things: that the numbers are right, and that they are understood.", "يهمني أمران: أن تكون الأرقام صحيحة، وأن تكون مفهومة.");
+    var PR = window.DESK_PROFILE;
+    $("introRole").textContent = PR ? (C.lang() === "ar" ? PR.role.ar : PR.role.en.toUpperCase()) : T("DATA ANALYST", "محللة بيانات");
+    $("introBio").textContent = PR ? C.tr(PR.line) : C.tr(S.bio);
     $("termBtn").setAttribute("aria-label", T("Open about_me.py", "افتح about_me.py")); $("termBtn").title = "about_me.py";
     $("cpClose").setAttribute("aria-label", T("Close", "إغلاق"));
     $("cpRun").textContent = T("Run ▶", "تشغيل ▶");

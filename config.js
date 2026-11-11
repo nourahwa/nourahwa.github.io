@@ -5,10 +5,12 @@
    your email address is not in the page. Empty means messages go to the email in settings.js.
    supabaseUrl and supabaseKey: the live notes board. From Supabase > Project Settings > API,
    copy the Project URL and the public key (anon or publishable). Never put the secret or
-   service_role key here. Empty means notes go to your email instead. */
+   service_role key here. Empty means notes go to your email instead.
+   notesRepo: the repository that holds my Notebook files (the notes folder). */
 window.DESK_CONFIG = {
   goatcounter: "",
   formsubmit: "",
   supabaseUrl: "https://ejicyhkymyrmajkjantr.supabase.co",
+  notesRepo: "nourahwa/nourahwa.github.io",
   supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqaWN5aGt5bXlybWFqa2phbnRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ0MTAyNTUsImV4cCI6MjEwOTk4NjI1NX0.C6_eBln4J4ev_K0q-BXx5B4NWgiCcQJbwsmdzmoKppc"
 };

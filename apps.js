@@ -55,13 +55,20 @@
     });
     if (!r.ok) { var e = new Error("not sent"); if (r.status === 400 || r.status === 409) e.code = "busy"; throw e; }
   }
-  function sbAdd(entry) { return sbInsert("notes", { name: entry.name, text: entry.text || null, img: entry.img || null }); }
+  async function sbAdd(entry) {
+    var row = { name: entry.name, text: entry.text || null, img: entry.img || null };
+    if (entry.place) row.place = entry.place;
+    try { await sbInsert("notes", row); }
+    catch (e) { if (!row.place) throw e; delete row.place; await sbInsert("notes", row); }  /* before the place column exists */
+  }
   async function sbBoard() {
     var s = sb();
-    var r = await fetch(s.url + "/rest/v1/notes?select=name,text,img,created_at&order=created_at.desc&limit=60", { headers: { apikey: s.key }, cache: "no-store" });
+    var q = "/rest/v1/notes?order=created_at.desc&limit=60&select=";
+    var r = await fetch(s.url + q + "name,place,text,img,created_at", { headers: { apikey: s.key }, cache: "no-store" });
+    if (!r.ok) r = await fetch(s.url + q + "name,text,img,created_at", { headers: { apikey: s.key }, cache: "no-store" });
     if (!r.ok) throw new Error("no board");
     var rows = await r.json();
-    return (Array.isArray(rows) ? rows : []).map(function (n) { return { name: n.name, text: n.text || "", img: n.img || "", at: Date.parse(n.created_at) || 0 }; });
+    return (Array.isArray(rows) ? rows : []).map(function (n) { return { name: n.name, place: n.place || "", text: n.text || "", img: n.img || "", at: Date.parse(n.created_at) || 0 }; });
   }
 
   /* a hidden field people never see; a bot that fills it is quietly ignored */
@@ -102,7 +109,7 @@
     return function () { clearTimeout(timer); stop(); };
   }
   function when(ms) {
-    try { return new Date(ms).toLocaleDateString(C.lang() === "ar" ? "ar-SA" : "en-GB", { day: "numeric", month: "short", timeZone: "Asia/Riyadh" }); } catch (e) { return ""; }
+    try { return new Date(ms).toLocaleDateString(C.lang() === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-GB", { day: "numeric", month: "short", timeZone: "Asia/Riyadh" }); } catch (e) { return ""; }
   }
   function bar(text) { return el("p", "note-bar", text); }
   function field(id, ph, max, type) { var i = el("input", "field"); i.id = id; i.type = type || "text"; i.placeholder = ph; i.maxLength = max; i.setAttribute("aria-label", ph); return i; }
@@ -113,36 +120,22 @@
   /* ---------- about ---------- */
   /* about me, written as a small Python file: it types itself, runs, and the output is the introduction.
      The code and the output come from the same text below, so they always match. */
-  var ME = {
-    en: {
-      role: "data analyst", hi: "Hi, I'm", label: "Toolkit:",
-      mission: "I turn raw data into decisions people can trust.",
-      skills: [
-        ["Data cleaning", "messy files in, trusted tables out"],
-        ["Exploratory analysis", "I get to know the data before I question it"],
-        ["Data visualization", "one chart, one clear message"],
-        ["KPI design", "measure what the goal really needs"],
-        ["Business analysis", "link every number to a real decision"],
-        ["Data storytelling", "findings a manager can read in a minute"]
-      ]
-    },
-    ar: {
-      role: "محللة بيانات", hi: "أهلًا، أنا", label: "أدواتي:",
-      mission: "أحوّل البيانات الخام إلى قرارات يُعتمد عليها.",
-      skills: [
-        ["تنظيف البيانات", "ملفات مبعثرة تدخل، وجداول موثوقة تخرج"],
-        ["التحليل الاستكشافي", "أتعرّف على البيانات قبل أن أسألها"],
-        ["التصوير المرئي", "رسم واحد ورسالة واضحة"],
-        ["مؤشرات الأداء", "أقيس ما يحتاجه الهدف فعلًا"],
-        ["تحليل الأعمال", "أربط كل رقم بقرار حقيقي"],
-        ["سرد القصص بالبيانات", "نتيجة يقرؤها المدير في دقيقة"]
-      ]
-    }
-  };
+  /* my profile lives in profile.js; the original site's settings are the fallback */
+  var PR = window.DESK_PROFILE || { role: { en: "Data analyst", ar: "محللة بيانات" }, bio: S.bio, mission: S.bio, skills: S.skills.map(function (x) { return { en: x.en, ar: x.ar, how: { en: "", ar: "" } }; }), tools: S.tools };
+  function meFor(lang) {
+    var ar = lang === "ar";
+    return {
+      role: ar ? PR.role.ar.replace(" · ", " و") : PR.role.en.replace(" · ", " & ").toLowerCase(),
+      hi: ar ? "أهلًا، أنا" : "Hi, I'm", label: ar ? "أدواتي:" : "Toolkit:",
+      mission: (PR.mission || PR.bio)[ar ? "ar" : "en"],
+      skills: PR.skills.map(function (x) { return [x[ar ? "ar" : "en"], x.how[ar ? "ar" : "en"]]; })
+    };
+  }
+  var ME = { en: meFor("en"), ar: meFor("ar") };
   function aboutCode(m) {
     var pad = Math.max.apply(null, m.skills.map(function (x) { return x[0].length; }));
     return [
-      "class DataAnalyst:",
+      "class AboutMe:",
       "    def __init__(self):",
       '        self.name = "' + S.name + '"',
       '        self.role = "' + m.role + '"',
@@ -154,10 +147,10 @@
       "        }",
       "",
       "    def toolkit(self):",
-      "        return [" + S.tools.map(function (x) { return '"' + x + '"'; }).join(", ") + "]",
+      "        return [" + PR.tools.map(function (x) { return '"' + x + '"'; }).join(", ") + "]",
       "",
       "",
-      "me = DataAnalyst()",
+      "me = AboutMe()",
       "",
       'print(f"' + m.hi + ' {me.name} — {me.role}")',
       "print(me.mission)",
@@ -171,11 +164,11 @@
   function aboutOutput(m) {
     return [m.hi + " " + S.name + " — " + m.role, m.mission, ""]
       .concat(m.skills.map(function (x) { return "• " + x[0] + ": " + x[1]; }))
-      .concat(["", m.label + " " + S.tools.join(" · ")]);
+      .concat(["", m.label + " " + PR.tools.join(" · ")]);
   }
   function highlight(code) {
     var esc = function (t) { return t.replace(/&/g, "&amp;").replace(/</g, "&lt;"); };
-    return code.replace(/(f?"[^"\n]*"?)|(#.*)|\b(class|def|return|for|in|self)\b|\b(print|DataAnalyst)\b|[^"#\w]+|\w+/g, function (m, str, com, kw, fn) {
+    return code.replace(/(f?"[^"\n]*"?)|(#.*)|\b(class|def|return|for|in|self)\b|\b(print|AboutMe)\b|[^"#\w]+|\w+/g, function (m, str, com, kw, fn) {
       if (str) return '<span class="k-s">' + esc(str) + "</span>";
       if (com) return '<span class="k-c">' + esc(com) + "</span>";
       if (kw) return '<span class="k-k">' + kw + "</span>";
@@ -191,12 +184,12 @@
     var box = el("div", "about"), av = el("div", "avatar big"); av.innerHTML = A.avatar(); box.appendChild(av);
     var t = el("div");
     t.appendChild(el("p", "about-name", S.name));
-    t.appendChild(el("p", "muted", T("Data analyst", "محللة بيانات")));
-    t.appendChild(el("p", "about-bio", C.tr(S.bio)));
+    t.appendChild(el("p", "muted", C.tr(PR.role)));
+    t.appendChild(el("p", "about-bio", C.tr(PR.bio)));
     t.appendChild(el("h3", "", T("Skills", "المهارات")));
-    var sk = el("div", "chips"); S.skills.forEach(function (x) { sk.appendChild(el("span", "chip", C.tr(x))); }); t.appendChild(sk);
+    var sk = el("div", "chips"); PR.skills.forEach(function (x) { sk.appendChild(el("span", "chip", C.tr(x))); }); t.appendChild(sk);
     t.appendChild(el("h3", "", T("Tools", "الأدوات")));
-    var tl = el("div", "chips"); S.tools.forEach(function (x) { tl.appendChild(el("span", "chip", x)); }); t.appendChild(tl);
+    var tl = el("div", "chips"); PR.tools.forEach(function (x) { tl.appendChild(el("span", "chip", x)); }); t.appendChild(tl);
     var row = el("div", "row gap-top");
     row.appendChild(C.link(C.profile, "btn", "GitHub ↗", true));
     if (C.mailto()) row.appendChild(C.link(C.mailto(), "btn light", S.email));
@@ -298,193 +291,259 @@
     if (opts && opts.list) list(); else home();
   };
 
-  /* ---------- notes: write or draw; only the writer and the owner see it, the owner can pin it ---------- */
-  function canvasBox(onChange) {
-    var wrap = el("div", "draw"), tools = el("div", "tools"), tool = "pen", color = "#21392E";
-    [["pen", T("Pen", "قلم")], ["marker", T("Marker", "ماركر")], ["eraser", T("Eraser", "ممحاة")]].forEach(function (k, i) {
-      var b = button(k[1], i ? "tk" : "tk on");
-      b.addEventListener("click", function () { tool = k[0]; tools.querySelectorAll(".tk").forEach(function (x) { x.classList.remove("on"); }); b.classList.add("on"); });
-      tools.appendChild(b);
-    });
-    var size = el("input"); size.type = "range"; size.min = 2; size.max = 18; size.value = 5; size.setAttribute("aria-label", T("Brush size", "حجم الفرشاة")); tools.appendChild(size);
-    var colors = el("div", "colors");
-    ["#21392E", "#0D1E2F", "#4E7A5E", "#88C9E2", "#E2AFB1", "#C8553D", "#E2C46A", "#9B7BB8"].forEach(function (c, i) {
-      var b = button("", i ? "" : "on"); b.style.background = c; b.setAttribute("aria-label", c);
-      b.addEventListener("click", function () { color = c; colors.querySelectorAll("button").forEach(function (x) { x.classList.remove("on"); }); b.classList.add("on"); });
-      colors.appendChild(b);
-    });
-    tools.appendChild(colors);
-    var clear = button(T("Clear", "مسح"), "tk"); tools.appendChild(clear);
-    var area = el("div", "canvas-wrap"), cv = document.createElement("canvas");
-    cv.width = 800; cv.height = 520; cv.setAttribute("aria-label", T("Drawing area", "مساحة الرسم"));
-    area.appendChild(cv);
-    wrap.appendChild(tools); wrap.appendChild(area);
-    var ctx = cv.getContext("2d"), last = null, drew = false;
-    function blank() { ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, cv.width, cv.height); drew = false; }
-    blank();
-    clear.addEventListener("click", blank);
-    function at(e) { var r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * cv.width / r.width, (e.clientY - r.top) * cv.height / r.height]; }
-    function line(a, b) {
-      var s = +size.value;
-      ctx.lineCap = ctx.lineJoin = "round";
-      ctx.globalAlpha = tool === "marker" ? 0.35 : 1;
-      ctx.strokeStyle = tool === "eraser" ? "#FFFFFF" : color;
-      ctx.lineWidth = tool === "marker" ? s * 3 : tool === "eraser" ? s * 4 : s;
-      ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0] + 0.01, b[1]); ctx.stroke();
-      ctx.globalAlpha = 1; drew = true; if (onChange) onChange();
+  /* ---------- Sticky Notes: visitors draw a little note; I approve it and it shows on the wall ---------- */
+  var PAPERS = ["#FFFFFF", "#FBF3E4", "#FBE4E8", "#E6EEF8", "#E4F2EA", "#EEE8F8", "#FCF1CF", "#1F2A37"];
+  var PATTERNS = ["plain", "dots", "grid", "lines"];
+  var INKS = ["#1D1D1B", "#E5484D", "#F59E0B", "#3E9B5F", "#3B82F6", "#8B5CF6", "#EC4899", "#FFFFFF"];
+  var STICKERS = ["☀️", "⭐", "❤️", "🌸", "📊", "🎨", "😊", "✨", "🌿", "☕"];
+  function drawPaper(ctx, w, h, paper, pattern) {
+    ctx.fillStyle = paper; ctx.fillRect(0, 0, w, h);
+    var dark = paper === "#1F2A37", c = dark ? "rgba(255,255,255,.12)" : "rgba(29,29,27,.09)", step = 28, x, y;
+    ctx.save(); ctx.strokeStyle = c; ctx.fillStyle = c; ctx.lineWidth = 1;
+    if (pattern === "dots") { for (y = step; y < h; y += step) for (x = step; x < w; x += step) { ctx.beginPath(); ctx.arc(x, y, 1.6, 0, 7); ctx.fill(); } }
+    if (pattern === "grid") { ctx.beginPath(); for (x = step; x < w; x += step) { ctx.moveTo(x + .5, 0); ctx.lineTo(x + .5, h); } for (y = step; y < h; y += step) { ctx.moveTo(0, y + .5); ctx.lineTo(w, y + .5); } ctx.stroke(); }
+    if (pattern === "lines") { ctx.beginPath(); for (y = step * 1.5; y < h; y += step) { ctx.moveTo(0, y + .5); ctx.lineTo(w, y + .5); } ctx.stroke(); }
+    ctx.restore();
+  }
+  /* a strip of tape from a to b: plain, dotted or checked, in the chosen colour, with torn ends */
+  function drawTape(ctx, a, b, color, style) {
+    var dx = b[0] - a[0], dy = b[1] - a[1], len = Math.max(40, Math.hypot(dx, dy)), ang = Math.atan2(dy, dx), h = 30, i;
+    ctx.save(); ctx.translate(a[0], a[1]); ctx.rotate(ang);
+    ctx.beginPath(); ctx.moveTo(0, -h / 2);
+    for (i = 0; i <= 6; i++) ctx.lineTo((i % 2) * 4, -h / 2 + i * h / 6);
+    ctx.lineTo(len, h / 2);
+    for (i = 6; i >= 0; i--) ctx.lineTo(len - (i % 2) * 4, -h / 2 + i * h / 6);
+    ctx.closePath();
+    ctx.globalAlpha = 0.6; ctx.fillStyle = color; ctx.fill();
+    ctx.clip(); ctx.globalAlpha = 0.5; ctx.fillStyle = "#FFFFFF"; ctx.strokeStyle = "#FFFFFF"; ctx.lineWidth = 2;
+    if (style === "dots") for (var x = 8; x < len; x += 10) for (var y = -h / 2 + 6; y < h / 2; y += 9) { ctx.beginPath(); ctx.arc(x + (Math.round(y) % 2 ? 5 : 0), y, 1.8, 0, 7); ctx.fill(); }
+    if (style === "grid") { ctx.beginPath(); for (var gx = 6; gx < len; gx += 9) { ctx.moveTo(gx, -h / 2); ctx.lineTo(gx, h / 2); } for (var gy = -h / 2 + 5; gy < h / 2; gy += 9) { ctx.moveTo(0, gy); ctx.lineTo(len, gy); } ctx.stroke(); }
+    ctx.restore();
+  }
+  function pad() {
+    var W = 960, H = 600, state = { tool: "pen", ink: INKS[0], size: 5, paper: PAPERS[0], pattern: "grid", tape: "plain", sticker: STICKERS[0] };
+    var wrap = el("div", "sn"), side = el("div", "sn-tools"), stage = el("div", "sn-stage");
+    var paper = document.createElement("canvas"), ink = document.createElement("canvas"), over = document.createElement("canvas");
+    [paper, ink, over].forEach(function (c, i) { c.width = W; c.height = H; c.className = ["sn-paper", "sn-ink", "sn-over"][i]; stage.appendChild(c); });
+    ink.setAttribute("aria-label", T("Drawing area", "مساحة الرسم"));
+    var pc = paper.getContext("2d"), ic = ink.getContext("2d"), oc = over.getContext("2d"), drew = false, undo = [];
+    function repaper() { drawPaper(pc, W, H, state.paper, state.pattern); }
+    repaper();
+    function tbtn(key, label, icon) {
+      var b = button("", "sn-tool" + (state.tool === key ? " on" : "")); b.dataset.tool = key; b.setAttribute("aria-label", label);
+      b.innerHTML = '<span class="sn-ico">' + icon + "</span>"; b.appendChild(el("small", "", label));
+      b.addEventListener("click", function () { state.tool = key; side.querySelectorAll(".sn-tool").forEach(function (x) { x.classList.toggle("on", x === b); }); stickerRow.hidden = key !== "sticker"; });
+      side.appendChild(b); return b;
     }
-    cv.addEventListener("pointerdown", function (e) { cv.setPointerCapture(e.pointerId); last = at(e); line(last, last); });
-    cv.addEventListener("pointermove", function (e) { if (!last) return; var p = at(e); line(last, p); last = p; });
-    ["pointerup", "pointercancel"].forEach(function (k) { cv.addEventListener(k, function () { last = null; }); });
+    tbtn("pen", T("Pen", "قلم"), "✎");
+    tbtn("marker", T("Marker", "ماركر"), "▍");
+    tbtn("rake", T("Rake", "مشط"), "≡");
+    tbtn("tape", T("Tape", "شريط"), "▭");
+    tbtn("eraser", T("Eraser", "ممحاة"), "⌫");
+    tbtn("sticker", T("Stickers", "ستيكر"), "☺");
+    var stickerRow = el("div", "sn-stickers"); stickerRow.hidden = true;
+    STICKERS.forEach(function (st, i) { var b = button(st, i ? "" : "on"); b.addEventListener("click", function () { state.sticker = st; stickerRow.querySelectorAll("button").forEach(function (x) { x.classList.toggle("on", x === b); }); }); stickerRow.appendChild(b); });
+    var tapes = el("div", "sn-tapes");
+    [["plain", T("Plain tape", "شريط سادة")], ["dots", T("Dotted tape", "شريط منقط")], ["grid", T("Checked tape", "شريط كروهات")]].forEach(function (t) {
+      var b = button("", "sn-tape " + t[0] + (state.tape === t[0] ? " on" : "")); b.setAttribute("aria-label", t[1]); b.title = t[1];
+      b.addEventListener("click", function () { state.tape = t[0]; state.tool = "tape"; tapes.querySelectorAll("button").forEach(function (x) { x.classList.toggle("on", x === b); }); side.querySelectorAll(".sn-tool").forEach(function (x) { x.classList.toggle("on", x.dataset.tool === "tape"); }); stickerRow.hidden = true; });
+      tapes.appendChild(b);
+    });
+    side.appendChild(tapes);
+    var size = el("input", "sn-size"); size.type = "range"; size.min = 2; size.max = 24; size.value = state.size; size.setAttribute("aria-label", T("Size", "الحجم"));
+    size.addEventListener("input", function () { state.size = +size.value; });
+    side.appendChild(size);
+    var inks = el("div", "sn-inks");
+    function setInk(c, b) { state.ink = c; inks.querySelectorAll("button").forEach(function (x) { x.classList.toggle("on", x === b); }); tapes.style.setProperty("--tape", c); }
+    INKS.forEach(function (c, i) { var b = button("", i ? "" : "on"); b.style.background = c; b.setAttribute("aria-label", c); b.addEventListener("click", function () { setInk(c, b); }); inks.appendChild(b); });
+    var pick = el("input", "sn-pick"); pick.type = "color"; pick.value = "#7C5CFF"; pick.setAttribute("aria-label", T("More colours", "ألوان أكثر"));
+    pick.addEventListener("input", function () { setInk(pick.value, null); });
+    inks.appendChild(pick);
+    side.appendChild(inks);
+    tapes.style.setProperty("--tape", state.ink);
+
+    var bottom = el("div", "sn-paperbar");
+    bottom.appendChild(el("span", "sn-label", T("PAPER", "الورق")));
+    PAPERS.forEach(function (c, i) { var b = button("", "sn-pp" + (i ? "" : " on")); b.style.background = c; b.setAttribute("aria-label", c); b.addEventListener("click", function () { state.paper = c; bottom.querySelectorAll(".sn-pp").forEach(function (x) { x.classList.toggle("on", x === b); }); repaper(); }); bottom.appendChild(b); });
+    bottom.appendChild(el("i", "sn-div"));
+    PATTERNS.forEach(function (p) { var b = button("", "sn-pat " + p + (state.pattern === p ? " on" : "")); b.setAttribute("aria-label", p); b.addEventListener("click", function () { state.pattern = p; bottom.querySelectorAll(".sn-pat").forEach(function (x) { x.classList.toggle("on", x === b); }); repaper(); }); bottom.appendChild(b); });
+
+    var main = el("div", "sn-main"); main.appendChild(stickerRow); main.appendChild(stage); main.appendChild(bottom);
+    wrap.appendChild(side); wrap.appendChild(main);
+
+    function at(e) { var r = ink.getBoundingClientRect(); return [(e.clientX - r.left) * W / r.width, (e.clientY - r.top) * H / r.height]; }
+    function seg(a, b) {
+      var s = state.size; ic.lineCap = ic.lineJoin = "round";
+      ic.globalCompositeOperation = state.tool === "eraser" ? "destination-out" : "source-over";
+      ic.strokeStyle = state.ink; ic.globalAlpha = state.tool === "marker" ? 0.35 : 1;
+      if (state.tool === "rake") {
+        var dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1, nx = -dy / l, ny = dx / l;
+        ic.lineWidth = Math.max(1, s / 4);
+        for (var k = -2; k <= 2; k++) { ic.beginPath(); ic.moveTo(a[0] + nx * k * s, a[1] + ny * k * s); ic.lineTo(b[0] + nx * k * s + .01, b[1] + ny * k * s); ic.stroke(); }
+      } else {
+        ic.lineWidth = state.tool === "marker" ? s * 3 : state.tool === "eraser" ? s * 4 : s;
+        ic.beginPath(); ic.moveTo(a[0], a[1]); ic.lineTo(b[0] + .01, b[1]); ic.stroke();
+      }
+      ic.globalAlpha = 1; ic.globalCompositeOperation = "source-over"; drew = true;
+    }
+    var last = null, start = null, path = null;
+    /* the marker is drawn as one see-through stroke, so it does not get darker where it overlaps itself */
+    function markerPath(c, pts) {
+      c.save(); c.globalAlpha = 0.35; c.strokeStyle = state.ink; c.lineWidth = state.size * 3; c.lineCap = c.lineJoin = "round";
+      c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); pts.forEach(function (q) { c.lineTo(q[0] + .01, q[1]); }); c.stroke(); c.restore();
+    }
+    function save() { undo.push(ic.getImageData(0, 0, W, H)); if (undo.length > 15) undo.shift(); }
+    ink.addEventListener("pointerdown", function (e) {
+      try { ink.setPointerCapture(e.pointerId); } catch (err) { /* not a real pointer */ }
+      save();
+      var p = at(e);
+      if (state.tool === "sticker") { ic.font = (state.size * 3 + 28) + "px serif"; ic.textAlign = "center"; ic.textBaseline = "middle"; ic.fillText(state.sticker, p[0], p[1]); drew = true; return; }
+      if (state.tool === "tape") { start = p; return; }
+      if (state.tool === "marker") { path = [p]; oc.clearRect(0, 0, W, H); markerPath(oc, path); return; }
+      last = p; seg(p, p);
+    });
+    ink.addEventListener("pointermove", function (e) {
+      var p = at(e);
+      if (start) { oc.clearRect(0, 0, W, H); drawTape(oc, start, p, state.ink, state.tape); return; }
+      if (path) { path.push(p); oc.clearRect(0, 0, W, H); markerPath(oc, path); return; }
+      if (!last) return; seg(last, p); last = p;
+    });
+    function up(e) {
+      if (start) { oc.clearRect(0, 0, W, H); drawTape(ic, start, at(e), state.ink, state.tape); drew = true; start = null; }
+      if (path) { oc.clearRect(0, 0, W, H); markerPath(ic, path); drew = true; path = null; }
+      last = null;
+    }
+    ink.addEventListener("pointerup", up);
+    ink.addEventListener("pointercancel", function () { oc.clearRect(0, 0, W, H); start = null; last = null; path = null; });
     return {
       node: wrap,
       drew: function () { return drew; },
-      image: function () { var s = document.createElement("canvas"); s.width = 400; s.height = 260; s.getContext("2d").drawImage(cv, 0, 0, 400, 260); return s.toDataURL("image/jpeg", 0.8); },
-      clear: blank
+      undo: function () { if (undo.length) ic.putImageData(undo.pop(), 0, 0); },
+      clear: function () { save(); ic.clearRect(0, 0, W, H); drew = false; },
+      image: function () {
+        var s = document.createElement("canvas"); s.width = 480; s.height = 300;
+        var c = s.getContext("2d"); c.drawImage(paper, 0, 0, 480, 300); c.drawImage(ink, 0, 0, 480, 300);
+        return s.toDataURL("image/jpeg", 0.82);
+      }
     };
   }
-  function noteCard(n, extra) {
-    var a = el("figure", "sticky");
-    if (n.img && (/^data:image\/(jpeg|png);base64,/.test(n.img) || /^pinned\/[\w-]+\.(png|jpe?g)$/.test(n.img))) { var im = document.createElement("img"); im.src = n.img; im.alt = T("Drawing by ", "رسمة ") + (n.name || ""); a.appendChild(im); }
-    if (n.text) a.appendChild(el("p", "", n.text));
-    a.appendChild(el("small", "", (n.name || "") + " · " + when(n.at)));
-    if (extra) a.appendChild(extra);
+  /* one visitor note as a tidy row: initial, name, place, date, words, and the drawing */
+  function noteRow(n, extra, onImage) {
+    var a = el("article", "sn-row"); a.dir = /[\u0600-\u06FF]/.test((n.text || n.name || "").slice(0, 20)) ? "rtl" : "ltr";
+    a.appendChild(el("span", "sn-av", (String(n.name || "?").trim()[0] || "?").toUpperCase()));
+    var t = el("div", "sn-rt"), head = el("p", "sn-who");
+    head.appendChild(el("b", "", n.name || T("Guest", "زائر")));
+    if (n.place) head.appendChild(el("span", "", " · " + n.place));
+    head.appendChild(el("time", "", when(n.at)));
+    t.appendChild(head);
+    if (n.text) { var p = el("p", "sn-say", n.text); p.dir = "auto"; t.appendChild(p); }
+    if (n.img && (/^data:image\/(jpeg|png);base64,/.test(n.img) || /^pinned\/[\w-]+\.(png|jpe?g)$/.test(n.img))) {
+      var b = button("", "sn-thumb"), im = document.createElement("img"); im.src = n.img; im.alt = T("Drawing by ", "رسمة ") + (n.name || "");
+      b.appendChild(im); b.setAttribute("aria-label", T("Open the drawing", "كبّر الرسمة"));
+      b.addEventListener("click", function () { if (onImage) onImage(n.img, im.alt); }); t.appendChild(b);
+    }
+    if (extra) t.appendChild(extra);
+    a.appendChild(t);
     return a;
   }
 
-  APPS.notes = function (w) {
-    w.title(T("Notes", "الملاحظات"));
-    var stops = [], view = el("div");
+  APPS.sticky = function (w) {
+    w.title("Sticky Notes");
+    var stops = [], view = el("div", "sn-view");
     function stopAll() { stops.forEach(function (s) { s(); }); stops = []; }
     w.onClose(stopAll);
-    var tabs = [["write", T("Write", "اكتب")], ["draw", T("Draw", "ارسم")], ["pinned", T("Board", "اللوحة")]];
-    var btns = {};
-    function tabBar() {
-      w.clearTools();
-      tabs.forEach(function (t) { btns[t[0]] = w.tool(t[1]); btns[t[0]].addEventListener("click", function () { show(t[0]); }); });
-    }
-    tabBar();
     w.body.appendChild(view);
-    STORE.ready.then(function () {
-      if (STORE.db && STORE.owner && !btns.inbox) {
-        tabs.push(["inbox", T("Inbox", "الوارد")]);
-        tabBar(); mark(currentTab);
-      }
-    });
-    var currentTab = "write";
-    function mark(t) { Object.keys(btns).forEach(function (k) { btns[k].className = k === t ? "on" : ""; }); }
+    var tWall = w.tool(T("Wall", "الحائط")), tDraw = w.tool(T("Draw", "ارسم")), tInbox = null;
+    function mark(b) { [tWall, tDraw, tInbox].forEach(function (x) { if (x) x.className = x === b ? "on" : ""; }); }
+    tWall.addEventListener("click", wall); tDraw.addEventListener("click", draw);
+    STORE.ready.then(function () { if (STORE.db && STORE.owner) { tInbox = w.tool(T("Inbox", "الوارد")); tInbox.addEventListener("click", inbox); } });
 
-    function compose(kind) {
-      view.innerHTML = "";
-      view.appendChild(el("p", "muted", sb() && !useDb()
-        ? T("Leave me a note or a drawing. It shows on the board once I approve it.", "اترك لي ملاحظة أو رسمة، وتطلع في اللوحة بعد ما أوافق عليها.")
-        : T("Leave me a note or a drawing. Only you and I can see it.", "اترك لي ملاحظة أو رسمة. ما يشوفها غيرك وغيري.")));
-      var form = el("form", "compose"), body = null, pad = null;
-      if (kind === "write") { body = el("textarea", "paper"); body.id = "noteText"; body.maxLength = 1000; body.setAttribute("aria-label", T("Your note", "ملاحظتك")); form.appendChild(body); }
-      else { pad = canvasBox(); form.appendChild(pad.node); }
-      var row = el("div", "row gap-top"), name = field("noteName", T("Your name", "اسمك"), 40), send = el("button", "btn", T("Send", "أرسل")); send.type = "submit";
+    function draw() {
+      stopAll(); mark(tDraw); view.innerHTML = "";
+      var p = pad(); view.appendChild(p.node);
+      var form = el("form", "sn-form"), hp = trap();
+      var name = field("snName", T("Name (optional)", "الاسم (اختياري)"), 40), place = field("snPlace", T("Where from? (optional)", "من وين؟ (اختياري)"), 40), hi = field("snHi", T("Say hi (optional)", "قل مرحبا (اختياري)"), 300);
       try { name.value = localStorage.getItem("desk-name") || ""; } catch (e) { /* empty */ }
-      row.appendChild(name); row.appendChild(send); form.appendChild(row);
-      var info = el("p", "muted"); form.appendChild(info);
-      var hp = trap(); form.appendChild(hp);
-      view.appendChild(form);
-      var mine = el("div", "board"); view.appendChild(mine);
-      function showMine(list) {
-        mine.innerHTML = "";
-        if (list.length) mine.appendChild(el("h3", "", T("Your notes", "ملاحظاتك")));
-        var g = el("div", "wall"); list.forEach(function (n) { g.appendChild(noteCard(n)); }); mine.appendChild(g);
-      }
-      STORE.ready.then(function () {
-        if (!canSend()) { send.disabled = true; form.appendChild(bar(T("Sending is not available right now.", "الإرسال مو متاح حاليًا."))); return; }
-        /* on the published site the visitor's own notes are kept in their browser only */
-        if (!useDb()) { showMine(local("desk-mynotes").slice().reverse()); return; }
-        /* the visitor sees their own notes; the rules hide everyone else's */
-        var ref = STORE.db.doc("notes/" + STORE.uid);
-        stops.push(ref.onSnapshot(function (snap) {
-          mine.innerHTML = "";
-          var list = snap.exists ? (snap.data().entries || []).slice().reverse() : [];
-          if (list.length) mine.appendChild(el("h3", "", T("Your notes", "ملاحظاتك")));
-          var g = el("div", "wall"); list.forEach(function (n) { g.appendChild(noteCard(n)); }); mine.appendChild(g);
-        }, function () {}));
-      });
+      var acts = el("div", "sn-acts"), un = button("↶", "sn-mini"), cl = button(T("Clear", "مسح"), "sn-mini"), send = el("button", "sn-post", T("post ↗", "أرسل ↗")); send.type = "submit";
+      un.setAttribute("aria-label", T("Undo", "تراجع"));
+      un.addEventListener("click", p.undo); cl.addEventListener("click", p.clear);
+      acts.appendChild(un); acts.appendChild(cl);
+      [name, place, hi].forEach(function (x) { form.appendChild(x); });
+      form.appendChild(send); form.appendChild(hp);
+      var info = el("p", "sn-hint", T("Draw a little sticky, pick a paper, add your name and say hi. It shows on the wall once I approve it.", "ارسم ستيكي صغير، واختر الورق، واكتب اسمك وقل مرحبا. يطلع في الحائط بعد ما أوافق عليه."));
+      view.appendChild(acts); view.appendChild(form); view.appendChild(info);
       form.addEventListener("submit", async function (e) {
         e.preventDefault();
-        if (!canSend()) return;
-        var who = clean(name.value, 40);
-        if (!who) { name.focus(); info.textContent = T("Add your name first.", "اكتب اسمك أول."); return; }
-        var entry = { id: newId(), name: who, at: Date.now() };
-        if (body) { entry.text = String(body.value || "").trim().slice(0, 1000); if (!entry.text) { body.focus(); info.textContent = T("Write something first.", "اكتب شي أول."); return; } }
-        else { if (!pad.drew()) { info.textContent = T("Draw something first.", "ارسم شي أول."); return; } entry.img = pad.image(); }
-        try { localStorage.setItem("desk-name", who); } catch (err) { /* not remembered */ }
+        if (!canSend()) { info.textContent = T("Sending is not available right now.", "الإرسال مو متاح حاليًا."); return; }
+        var who = clean(name.value, 40) || T("Guest", "زائر"), from = clean(place.value, 40), say = String(hi.value || "").trim().slice(0, 300);
+        if (!p.drew() && !say) { info.textContent = T("Draw something or say hi first.", "ارسم شي أو قل مرحبا أول."); return; }
+        if (hp.value) { info.textContent = T("Posted. Thank you!", "تم الإرسال، شكرًا لك!"); return; }
+        if (!useDb() && tooSoon("note")) { info.textContent = T("Please wait a few seconds before sending again.", "انتظر ثواني قبل ما ترسل مرة ثانية."); return; }
+        var entry = { id: newId(), name: who, place: from, text: say, at: Date.now() };
+        if (p.drew()) entry.img = p.image();
+        try { if (clean(name.value, 40)) localStorage.setItem("desk-name", who); } catch (err) { /* not remembered */ }
         send.disabled = true; info.textContent = T("Sending...", "جاري الإرسال...");
-        if (hp.value) { info.textContent = T("Sent. Thank you!", "تم الإرسال، شكرًا لك!"); send.disabled = false; return; }
-        if (!useDb() && tooSoon("note")) { info.textContent = T("Please wait a few seconds before sending again.", "انتظر ثواني قبل ما ترسل مرة ثانية."); send.disabled = false; return; }
         try {
-          var waits = false;
           if (useDb()) await append("notes", entry, 8);
           else if (sb()) {
-            await sbAdd(entry); waits = true;
-            /* a short heads-up to my email; the note itself is already saved */
-            emailMe("New note waiting for approval", { name: who, note: entry.text || "(a drawing)" }).catch(function () {});
+            await sbAdd(entry);
+            emailMe("New sticky note waiting for approval", { name: who, from: from || "-", note: say || "(a drawing)" }).catch(function () {});
             lastSend.note = Date.now();
-            showMine(local("desk-mynotes", entry, 4).slice().reverse());
-          } else {
-            await emailMe("New note from " + who, { name: who, note: entry.text || "(drawing attached)" }, entry.img);
-            showMine(local("desk-mynotes", entry, 4).slice().reverse());
-          }
-          info.textContent = waits ? T("Sent. It shows on the board once I approve it. Thank you!", "تم الإرسال، وتطلع في اللوحة بعد الموافقة. شكرًا لك!") : T("Sent. Thank you!", "تم الإرسال، شكرًا لك!");
+          } else await emailMe("New sticky note from " + who, { name: who, from: from || "-", note: say || "(drawing attached)" }, entry.img);
+          local("desk-mynotes", { name: who, place: from, text: say, at: entry.at }, 4);
+          info.textContent = T("Posted! It shows on the wall once I approve it. Thank you!", "تم الإرسال! يطلع في الحائط بعد الموافقة. شكرًا لك!");
           if (window.BADGES) window.BADGES.give("note");
-          if (body) body.value = ""; else pad.clear();
+          p.clear(); hi.value = "";
         } catch (err) {
-          info.textContent = err && err.code === "quota_exceeded" ? T("Notes are full right now.", "الملاحظات ممتلئة حاليًا.") : err && err.code === "wait" ? T("Please wait a few seconds before sending again.", "انتظر ثواني قبل ما ترسل مرة ثانية.") : err && err.code === "busy" ? T("The board is busy right now. Try again later.", "اللوحة مزحومة حاليًا، جرّب بعدين.") : T("Could not send. Try again in a moment.", "ما تم الإرسال، جرّب بعد شوي.");
+          info.textContent = err && err.code === "wait" ? T("Please wait a few seconds before sending again.", "انتظر ثواني قبل ما ترسل مرة ثانية.") : err && err.code === "busy" ? T("The wall is busy right now. Try again later.", "الحائط مزحوم حاليًا، جرّب بعدين.") : T("Could not send. Try again in a moment.", "ما تم الإرسال، جرّب بعد شوي.");
         }
         send.disabled = false;
       });
     }
 
-    function pinned() {
-      view.innerHTML = "";
-      view.appendChild(el("p", "muted", T("Notes and drawings from visitors.", "ملاحظات ورسومات الزوار.")));
-      var g = el("div", "wall"), status = el("p", "empty", T("Loading...", "جاري التحميل..."));
-      view.appendChild(status); view.appendChild(g);
+    function lightbox(src, alt) {
+      var box = el("div", "sn-light"), im = document.createElement("img"); im.src = src; im.alt = alt;
+      box.appendChild(im); box.addEventListener("click", function () { box.remove(); });
+      view.appendChild(box);
+    }
+    function wall() {
+      stopAll(); mark(tWall); view.innerHTML = "";
+      var head = el("div", "sn-wallhead"), count = el("p", "sn-count"), list = el("div", "sn-list"), status = el("p", "sn-empty", T("Loading...", "جاري التحميل..."));
+      head.appendChild(count);
+      var go = button(T("+ Draw a note", "+ ارسم ملاحظة"), "sn-post"); go.addEventListener("click", draw); head.appendChild(go);
+      view.appendChild(head); view.appendChild(status); view.appendChild(list);
+      function paint(rows) {
+        list.innerHTML = "";
+        rows.sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
+        count.textContent = rows.length + T(rows.length === 1 ? " note from visitors" : " notes from visitors", " ملاحظة من الزوار");
+        status.hidden = rows.length > 0; status.textContent = T("No notes yet. Be the first!", "ما فيه ملاحظات للحين، كن أول واحد!");
+        rows.forEach(function (n) { list.appendChild(noteRow(n, null, lightbox)); });
+      }
       STORE.ready.then(function () {
-        if (!STORE.db) {
-          /* on the published site: the notes I approved in Supabase, plus any I add by hand in pinned.json.
-             Visitors can only look. The board checks for new notes every 30 seconds while it is open. */
-          var fixed = fetch("pinned.json", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
-          function paint(list) {
-            g.innerHTML = "";
-            status.hidden = list.length > 0; status.textContent = T("Nothing pinned yet.", "ما فيه شي مثبت للحين.");
-            list.forEach(function (n, i) { var c = noteCard(n); c.style.setProperty("--tilt", ((i % 3) - 1) * 1.4 + "deg"); g.appendChild(c); });
-          }
-          function load() {
-            Promise.all([fixed, sb() ? sbBoard().catch(function () { return []; }) : []]).then(function (both) {
-              var list = (Array.isArray(both[0]) ? both[0] : []).concat(both[1]).filter(function (n) { return n && (n.text || n.img); });
-              list.sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
-              if (g.isConnected) paint(list);
-            });
-          }
-          load();
-          if (sb()) { var tick = setInterval(load, 30000); stops.push(function () { clearInterval(tick); }); }
+        if (STORE.db) {
+          stops.push(watch("pinned", function (l) { paint(l); }, function () { status.hidden = false; status.textContent = T("Can't reach the wall right now.", "ما قدرنا نوصل للحائط حاليًا."); }));
           return;
         }
-        stops.push(watch("pinned", function (list) {
-          g.innerHTML = "";
-          status.hidden = list.length > 0;
-          status.textContent = T("Nothing pinned yet.", "ما فيه شي مثبت للحين.");
-          list.forEach(function (n, i) { var c = noteCard(n); c.style.setProperty("--tilt", ((i % 3) - 1) * 1.4 + "deg"); g.appendChild(c); });
-        }, function () { status.hidden = false; status.textContent = T("Can't reach the board right now.", "ما قدرنا نوصل للوحة حاليًا."); }));
+        var fixed = fetch("pinned.json", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
+        function load() {
+          Promise.all([fixed, sb() ? sbBoard().catch(function () { return []; }) : []]).then(function (both) {
+            if (!list.isConnected) return;
+            paint((Array.isArray(both[0]) ? both[0] : []).concat(both[1]).filter(function (n) { return n && (n.text || n.img); }));
+          });
+        }
+        load();
+        if (sb()) { var tick = setInterval(load, 30000); stops.push(function () { clearInterval(tick); }); }
       });
     }
 
     function inbox() {
-      view.innerHTML = "";
-      var status = el("p", "muted", T("Loading...", "جاري التحميل...")), g = el("div", "wall");
-      view.appendChild(status); view.appendChild(g);
+      stopAll(); mark(tInbox); view.innerHTML = "";
+      var status = el("p", "sn-count", T("Loading...", "جاري التحميل...")), list = el("div", "sn-list");
+      view.appendChild(status); view.appendChild(list);
       var pins = {}, notes = [];
-      function draw() {
-        g.innerHTML = "";
-        status.textContent = notes.length ? T("Only you see this list. Pin a note to show it to everyone.", "هذي القائمة تشوفها أنت بس. ثبّت الملاحظة عشان يشوفها الكل.") : T("No notes yet.", "ما فيه ملاحظات للحين.");
+      function paint() {
+        list.innerHTML = "";
+        status.textContent = notes.length ? T("Only you see this list. Pin a note to show it on the wall.", "هذي القائمة تشوفها أنت بس. ثبّت الملاحظة عشان تطلع في الحائط.") : T("No notes yet.", "ما فيه ملاحظات للحين.");
         notes.forEach(function (n) {
           var row = el("div", "row"), on = !!pins[n.id];
           var pin = button(on ? T("Unpin", "إلغاء التثبيت") : T("Pin", "ثبّت"), on ? "btn" : "btn light");
@@ -492,29 +551,136 @@
             pin.disabled = true;
             try {
               if (on) await STORE.db.doc("pinned/" + n.id).delete();
-              else await STORE.db.doc("pinned/" + n.id).set({ text: n.text || "", img: n.img || "", name: n.name || "", at: n.at || Date.now() });
+              else await STORE.db.doc("pinned/" + n.id).set({ text: n.text || "", img: n.img || "", name: n.name || "", place: n.place || "", at: n.at || Date.now() });
             } catch (e) { pin.disabled = false; }
           });
           var del = button(T("Delete", "حذف"), "btn light");
-          del.addEventListener("click", async function () {
-            del.disabled = true;
-            try { await removeEntry("notes", n.owner, n.id); if (pins[n.id]) await STORE.db.doc("pinned/" + n.id).delete(); } catch (e) { del.disabled = false; }
-          });
+          del.addEventListener("click", async function () { del.disabled = true; try { await removeEntry("notes", n.owner, n.id); if (pins[n.id]) await STORE.db.doc("pinned/" + n.id).delete(); } catch (e) { del.disabled = false; } });
           row.appendChild(pin); row.appendChild(del);
-          g.appendChild(noteCard(n, row));
+          list.appendChild(noteRow(n, row, lightbox));
         });
       }
-      stops.push(watch("notes", function (l) { notes = l; draw(); }, function () { status.textContent = T("Can't reach notes right now.", "ما قدرنا نوصل للملاحظات حاليًا."); }));
-      stops.push(watch("pinned", function (l) { pins = {}; l.forEach(function (p) { pins[p.key] = true; }); draw(); }, function () {}));
+      stops.push(watch("notes", function (l) { notes = l; paint(); }, function () { status.textContent = T("Can't reach notes right now.", "ما قدرنا نوصل للملاحظات حاليًا."); }));
+      stops.push(watch("pinned", function (l) { pins = {}; l.forEach(function (p) { pins[p.key] = true; }); paint(); }, function () {}));
     }
+    wall();
+  };
 
-    function show(t) {
-      currentTab = t; stopAll(); mark(t);
-      if (t === "write" || t === "draw") compose(t);
-      else if (t === "pinned") pinned();
-      else inbox();
+  /* ---------- Notebook: my own notes, written as .md files in the notes folder of the site's repository ---------- */
+  function parseNote(file, text) {
+    var meta = {}, body = String(text || "").replace(/\r/g, "");
+    var m = /^---\n([\s\S]*?)\n---\n?/.exec(body);
+    if (m) { m[1].split("\n").forEach(function (l) { var i = l.indexOf(":"); if (i > 0) meta[l.slice(0, i).trim().toLowerCase()] = l.slice(i + 1).trim().replace(/^["']|["']$/g, ""); }); body = body.slice(m[0].length); }
+    var lines = body.trim().split("\n"), title = meta.title;
+    if (!title && /^#\s+/.test(lines[0] || "")) title = lines.shift().replace(/^#\s+/, "");
+    body = lines.join("\n").trim();
+    var first = (body.split(/\n\s*\n/)[0] || "").replace(/[#>*_`-]/g, "").trim();
+    var at = Date.parse(meta.date || "") || 0;
+    return { file: file, title: title || file.replace(/\.md$/, "").replace(/[_-]+/g, " "), at: at, pinned: /^(true|yes|1)$/i.test(meta.pinned || ""), body: body, first: first };
+  }
+  /* a small, safe Markdown: paragraphs, headings, lists, quotes, bold, italic, code and links */
+  function inline(node, text) {
+    var re = /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|\[[^\]]+\]\(https?:\/\/[^)\s]+\))/g, last = 0, m;
+    while ((m = re.exec(text))) {
+      if (m.index > last) node.appendChild(document.createTextNode(text.slice(last, m.index)));
+      var t = m[0], e;
+      if (t.slice(0, 2) === "**") e = el("b", "", t.slice(2, -2));
+      else if (t[0] === "*") e = el("i", "", t.slice(1, -1));
+      else if (t[0] === "`") e = el("code", "", t.slice(1, -1));
+      else { var k = t.indexOf("]("); e = C.link(t.slice(k + 2, -1), "", t.slice(1, k), true); }
+      node.appendChild(e); last = m.index + t.length;
     }
-    show("write");
+    if (last < text.length) node.appendChild(document.createTextNode(text.slice(last)));
+    return node;
+  }
+  function renderMd(src) {
+    var out = el("div", "nb-text");
+    src.split(/\n\s*\n/).forEach(function (block) {
+      var b = block.trim(); if (!b) return;
+      var ls = b.split("\n");
+      if (/^#{1,3}\s/.test(b)) out.appendChild(inline(el(/^#\s/.test(b) ? "h3" : "h4"), b.replace(/^#+\s+/, "")));
+      else if (ls.every(function (l) { return /^\s*[-*]\s+/.test(l); })) { var ul = el("ul"); ls.forEach(function (l) { ul.appendChild(inline(el("li"), l.replace(/^\s*[-*]\s+/, ""))); }); out.appendChild(ul); }
+      else if (ls.every(function (l) { return /^\s*\d+[.)]\s+/.test(l); })) { var ol = el("ol"); ls.forEach(function (l) { ol.appendChild(inline(el("li"), l.replace(/^\s*\d+[.)]\s+/, ""))); }); out.appendChild(ol); }
+      else if (/^>\s?/.test(b)) out.appendChild(inline(el("blockquote"), ls.map(function (l) { return l.replace(/^>\s?/, ""); }).join(" ")));
+      else { var p = el("p"); ls.forEach(function (l, i) { if (i) p.appendChild(el("br")); inline(p, l); }); out.appendChild(p); }
+    });
+    return out;
+  }
+  var notesCache = null;
+  function loadNotes() {
+    if (notesCache) return notesCache;
+    var repo = String(CFG.notesRepo || "");
+    var names = (/^[\w.-]+\/[\w.-]+$/.test(repo)
+      ? fetch("https://api.github.com/repos/" + repo + "/contents/notes", { headers: { Accept: "application/vnd.github+json" } }).then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (l) { return l.filter(function (f) { return f.type === "file"; }).map(function (f) { return f.name; }); })
+      : Promise.reject()
+    ).catch(function () { return fetch("notes/index.json", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; }); });
+    notesCache = names.then(function (list) {
+      list = (Array.isArray(list) ? list : []).filter(function (n) { return /^[\w.-]+\.md$/.test(n) && !/^readme\.md$/i.test(n); });
+      return Promise.all(list.map(function (n) { return fetch("notes/" + encodeURIComponent(n), { cache: "no-store" }).then(function (r) { return r.ok ? r.text() : ""; }).then(function (t) { return t ? parseNote(n, t) : null; }).catch(function () { return null; }); }));
+    }).then(function (notes) { return notes.filter(Boolean).sort(function (a, b) { return (b.at || 0) - (a.at || 0); }); });
+    notesCache.catch(function () { notesCache = null; });
+    return notesCache;
+  }
+  function longDate(ms) {
+    if (!ms) return "";
+    try { return new Date(ms).toLocaleDateString(C.lang() === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Riyadh" }); } catch (e) { return ""; }
+  }
+  function monthOf(ms) {
+    if (!ms) return T("Earlier", "قبل");
+    var d = new Date(ms), now = new Date();
+    if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()) return T("This month", "هذا الشهر");
+    try { return d.toLocaleDateString(C.lang() === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-GB", { month: "long", year: "numeric" }); } catch (e) { return ""; }
+  }
+  /* each note reads in its own language's direction, whatever language the site is in */
+  function noteDir(n) { return /[\u0600-\u06FF]/.test((n.title + n.first).replace(/[^\p{L}]/gu, "").slice(0, 12)) ? "rtl" : "ltr"; }
+  APPS.notebook = function (w) {
+    w.title("Notebook");
+    var box = el("div", "nb"), side = el("div", "nb-side"), read = el("div", "nb-read");
+    var search = el("input", "nb-search"); search.type = "search"; search.placeholder = T("Search", "بحث"); search.setAttribute("aria-label", T("Search notes", "ابحث في المذكرات"));
+    var list = el("div", "nb-list");
+    side.appendChild(search); side.appendChild(list);
+    box.appendChild(side); box.appendChild(read);
+    w.body.appendChild(box);
+    list.appendChild(el("p", "nb-empty", T("Loading...", "جاري التحميل...")));
+    var notes = [], current = null;
+    function open(n) {
+      current = n;
+      list.querySelectorAll(".nb-item").forEach(function (x) { x.classList.toggle("on", x.dataset.file === n.file); });
+      read.innerHTML = "";
+      var back = button(T("‹ Notes", "‹ المذكرات"), "nb-back"); back.addEventListener("click", function () { box.classList.remove("reading"); });
+      read.appendChild(back);
+      var art = el("article", "nb-note"); art.dir = noteDir(n);
+      if (n.at) art.appendChild(el("p", "nb-date", longDate(n.at)));
+      art.appendChild(el("h2", "nb-title", n.title));
+      art.appendChild(renderMd(n.body));
+      read.appendChild(art);
+      box.classList.add("reading");
+    }
+    function paint() {
+      var q = search.value.trim().toLowerCase();
+      var shown = notes.filter(function (n) { return !q || (n.title + " " + n.body).toLowerCase().indexOf(q) >= 0; });
+      list.innerHTML = "";
+      if (!shown.length) { list.appendChild(el("p", "nb-empty", notes.length ? T("No notes match.", "ما فيه مذكرات تطابق.") : T("No notes yet.", "ما فيه مذكرات للحين."))); return; }
+      var groups = [], seen = {};
+      shown.forEach(function (n) { var g = n.pinned ? T("Pinned", "المثبتة") : monthOf(n.at); if (!seen[g]) { seen[g] = []; groups.push([g, seen[g]]); } seen[g].push(n); });
+      groups.sort(function (a, b) { return (b[1][0].pinned ? 1 : 0) - (a[1][0].pinned ? 1 : 0); });
+      groups.forEach(function (g) {
+        list.appendChild(el("p", "nb-group", g[0]));
+        g[1].forEach(function (n) {
+          var b = button("", "nb-item" + (current && current.file === n.file ? " on" : "")); b.dataset.file = n.file; b.dir = noteDir(n);
+          b.appendChild(el("b", "", n.title));
+          var sub = el("span"); if (n.at) sub.appendChild(el("em", "", when(n.at))); sub.appendChild(document.createTextNode(n.first)); b.appendChild(sub);
+          b.addEventListener("click", function () { open(n); });
+          list.appendChild(b);
+        });
+      });
+    }
+    search.addEventListener("input", paint);
+    loadNotes().then(function (l) {
+      notes = l; paint();
+      if (notes.length && window.matchMedia("(min-width: 641px)").matches) open(notes.filter(function (n) { return n.pinned; })[0] || notes[0]);
+      else if (!notes.length) read.appendChild(el("p", "nb-empty center", T("Notes I write will show here.", "المذكرات اللي أكتبها بتطلع هنا.")));
+    });
   };
 
   /* ---------- CV: locked; a visitor asks for it with name, email and job title ---------- */
@@ -765,12 +931,13 @@
       [T("Projects", "المشاريع"), T("The Data & Business Analysis folder fills itself from my GitHub. Each project has the analysis, the dashboard and the code. Back returns you to the list.", "مجلد تحليل البيانات والأعمال يتعبى تلقائيًا من GitHub. كل مشروع فيه التحليل والداشبورد والكود، والرجوع يرجعك للقائمة.")],
       [T("Move icons", "تحريك الأيقونات"), T("Drag any icon on the desktop to place it where you like. Tidy up icons in the sun menu puts them back.", "اسحب أي أيقونة وحطها وين تبي. «ترتيب الأيقونات» في قائمة الشمس يرجعها مكانها.")],
       [T("Day and night", "النهار والليل"), T("Night mode in the sun menu darkens the windows and the bars. The background stays as it is.", "الوضع الليلي في قائمة الشمس يغمّق النوافذ والأشرطة، والخلفية تبقى مثل ما هي.")],
-      [T("Notes", "الملاحظات"), T("Write or draw a note with your name. Only you and I see it.", "اكتب أو ارسم ملاحظة باسمك، ما يشوفها غيرك وغيري.")],
+      [T("Notebook", "المذكرات"), T("Short notes I write about data, design and what I am learning. Search them or pick one from the list.", "مذكرات أكتبها عن البيانات والتصميم واللي أتعلمه. ابحث فيها أو اختر وحدة من القائمة.")],
+      [T("Sticky Notes", "ملاحظات الزوار"), T("Draw a little note with pens, tape and stickers, add your name and say hi. It shows on the wall once I approve it.", "ارسم ملاحظة بالأقلام والشرائط والستيكرات، واكتب اسمك وقل مرحبا. تطلع في الحائط بعد ما أوافق عليها.")],
       [T("CV", "السيرة الذاتية"), T("Ask for my CV with your name, email and job title.", "اطلب السيرة باسمك وإيميلك ومسماك الوظيفي.")],
       [T("Sudoku", "سودوكو"), T("A quick puzzle for a break.", "لغز سريع للاستراحة.")],
       [T("Data lab", "مختبر البيانات"), T("Drop a CSV file and get a quick profile of every column. The file stays in your browser.", "حط ملف CSV ويطلع لك ملخص لكل عمود، والملف ما يطلع من متصفحك.")],
       [T("Contact", "تواصل"), T("Write a message and send it straight to my email.", "اكتب رسالتك وتوصل لإيميلي على طول.")],
-      [T("Dock", "الشريط السفلي"), T("The tools I work with. Hover to see each name.", "الأدوات اللي أشتغل فيها، وقّف عليها وتشوف اسمها.")]
+      [T("Dock", "الشريط السفلي"), T("The tools I work with, for data and for design. Hover to see each name.", "الأدوات اللي أشتغل فيها للبيانات والتصميم، وقّف عليها وتشوف اسمها.")]
     ];
     var list = el("div", "help");
     tips.forEach(function (t) { var r = el("div", "help-row"); r.appendChild(el("b", "", t[0])); r.appendChild(el("p", "", t[1])); list.appendChild(r); });
