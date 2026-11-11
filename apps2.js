@@ -14,7 +14,7 @@
     ["sudoku", "#9B7BB8", "Puzzle solver", "حلّال الألغاز", "Solve a Sudoku", "حل سودوكو"],
     ["note", "#E2AFB1", "Kind words", "كلمة طيبة", "Send a note or a drawing", "أرسل ملاحظة أو رسمة"],
     ["colour", "#7FB2D0", "New view", "منظر جديد", "Change the background", "غيّر الخلفية"],
-    ["night", "#26354A", "Night owl", "سهران", "Switch on night mode", "شغّل الوضع الليلي"],
+    ["night", "#26354A", "Night owl", "ساهر الليل", "Switch on night mode", "شغّل الوضع الليلي"],
     ["saver", "#F6E7A1", "Patient eye", "عين صبورة", "Wait for the screensaver", "انتظر شاشة التوقف"],
     ["explorer", "#21392E", "Explorer", "المستكشف", "Open six different apps", "افتح ست تطبيقات مختلفة"]
   ];
@@ -97,17 +97,17 @@
     w.title(T("Data lab", "مختبر البيانات"));
     var drop = el("label", "drop"), input = el("input"); input.type = "file"; input.accept = ".csv,text/csv"; input.id = "labFile";
     drop.htmlFor = "labFile";
-    drop.appendChild(el("b", "", T("Drop a CSV file here, or click to choose one", "اسحب ملف CSV هنا، أو اضغط واختر ملف")));
-    drop.appendChild(el("small", "", T("It is read inside your browser and never uploaded. Up to 5 MB.", "ينقرأ داخل متصفحك وما يترفع لأي مكان. الحد 5 ميقا.")));
+    drop.appendChild(el("b", "", T("Drop a CSV file here, or click to choose one", "اسحب ملف CSV هنا، أو اضغط لاختيار ملف")));
+    drop.appendChild(el("small", "", T("It is read inside your browser and never uploaded. Up to 5 MB.", "يُقرأ الملف داخل متصفحك ولا يُرفع إلى أي مكان. الحد الأقصى 5 ميغابايت.")));
     drop.appendChild(input);
-    var sample = button(T("Try it with a table from my delivery project", "جرّب بجدول من مشروع التوصيل"), "btn light");
+    var sample = button(T("Try it with a table from my delivery project", "جرّب جدولًا من مشروع التوصيل"), "btn light");
     var head = el("div", "row"); head.appendChild(sample);
     var out = el("div", "lab-out");
     w.body.appendChild(drop); w.body.appendChild(head); w.body.appendChild(out);
     function show(name, text) {
       out.innerHTML = "";
       var rows = parseCSV(text);
-      if (rows.length < 2) { out.appendChild(el("p", "sql-err", T("This file has no data rows.", "هذا الملف ما فيه صفوف بيانات."))); return; }
+      if (rows.length < 2) { out.appendChild(el("p", "sql-err", T("This file has no data rows.", "لا يحتوي هذا الملف على صفوف بيانات."))); return; }
       var cols = profile(rows), missing = cols.reduce(function (a, c) { return a + c.missing; }, 0), cells = (rows.length - 1) * cols.length;
       var sum = el("div", "lab-sum");
       [[T("File", "الملف"), name], [T("Rows", "الصفوف"), (rows.length - 1).toLocaleString("en-US")], [T("Columns", "الأعمدة"), cols.length], [T("Missing cells", "خلايا ناقصة"), missing.toLocaleString("en-US") + " (" + (cells ? Math.round(missing / cells * 1000) / 10 : 0) + "%)"]].forEach(function (k) { var d = el("div"); d.appendChild(el("small", "", k[0])); d.appendChild(el("b", "", String(k[1]))); sum.appendChild(d); });
@@ -133,7 +133,7 @@
     }
     function read(file) {
       if (!file) return;
-      if (file.size > 5 * 1024 * 1024) { out.innerHTML = ""; out.appendChild(el("p", "sql-err", T("The file is larger than 5 MB.", "الملف أكبر من 5 ميقا."))); return; }
+      if (file.size > 5 * 1024 * 1024) { out.innerHTML = ""; out.appendChild(el("p", "sql-err", T("The file is larger than 5 MB.", "حجم الملف أكبر من 5 ميغابايت."))); return; }
       var r = new FileReader();
       r.onload = function () { show(file.name, String(r.result || "")); };
       r.readAsText(file);
@@ -167,7 +167,7 @@
       });
       w.body.appendChild(C.link(C.profile, "btn gap-top", T("Open my GitHub ↗", "افتح حسابي في GitHub ↗"), true));
     }, function () {
-      status.textContent = T("The list could not load.", "ما تحملت القائمة.");
+      status.textContent = T("The list could not load.", "تعذّر تحميل القائمة.");
       w.body.appendChild(C.link(C.profile, "btn gap-top", T("Open my GitHub ↗", "افتح حسابي في GitHub ↗"), true));
     });
   };

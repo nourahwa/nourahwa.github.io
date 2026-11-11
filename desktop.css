@@ -552,11 +552,11 @@ html[lang=ar] .sn-count{font-family:inherit;letter-spacing:0;text-transform:none
 .sn-who b{font-weight:600}.sn-who span{opacity:.6}
 .sn-who time{margin-inline-start:auto;font-size:11.5px;opacity:.55}
 .sn-say{font-size:13px;line-height:1.6;margin-top:3px;unicode-bidi:plaintext;text-align:start}
-.sn-thumb{display:block;margin-top:8px;padding:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;width:180px;background:#FFFFFF;cursor:zoom-in}
+.sn-thumb{display:block;margin-top:8px;padding:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;width:min(260px,100%);background:#FFFFFF;cursor:zoom-in}
 .sn-thumb img{display:block;width:100%}
 .sn-row .row{margin-top:8px}
-.sn-light{position:absolute;inset:-8px;z-index:5;background:rgba(10,14,12,.6);display:grid;place-items:center;padding:20px;border-radius:12px;cursor:zoom-out}
-.sn-light img{max-width:100%;max-height:70vh;border-radius:10px}
+.sn-light{position:absolute;inset:0;z-index:20;background:rgba(10,14,12,.72);display:grid;place-items:center;padding:28px;cursor:zoom-out}
+.sn-light img{max-width:100%;max-height:100%;border-radius:10px;box-shadow:0 20px 50px rgba(0,0,0,.35)}
 .sn-empty{font-size:13px;opacity:.6;padding:24px 0;text-align:center}
 :root[data-mode=night] .sn-paperbar,:root[data-mode=night] .sn-mini{background:var(--n2);color:#ECEFE8}
 :root[data-mode=night] .sn-label{color:#ECEFE8}
@@ -608,10 +608,21 @@ html[lang=ar] .sn-count{font-family:inherit;letter-spacing:0;text-transform:none
 /* Sticky Notes: writing a note */
 .sn-acts2{display:flex;gap:6px;align-items:center}
 .sn-write{display:flex;flex-direction:column;align-items:center;gap:12px;padding:8px 0 4px}
-.sn-card{position:relative;width:min(420px,100%);aspect-ratio:1/1;max-height:340px;border-radius:6px;background:#FFFDF8;box-shadow:0 1px 1px rgba(0,0,0,.04),0 10px 24px rgba(13,30,47,.12);transform:rotate(-1deg);transition:background .2s}
+.sn-card{position:relative;width:min(420px,100%);aspect-ratio:1/1;max-height:340px;border-radius:6px;background:#FFFDF8;box-shadow:0 1px 1px rgba(0,0,0,.04),0 10px 24px rgba(13,30,47,.12);transform:rotate(-1deg)}
 .sn-card::before{content:"";position:absolute;top:-10px;left:50%;width:96px;height:22px;transform:translateX(-50%) rotate(-3deg);background:rgba(231,201,160,.7);border-radius:2px}
-.sn-paper{width:100%;height:100%;resize:none;border:0;outline:0;background:transparent;padding:30px 24px 26px;font:inherit;font-size:15px;line-height:28px;color:#1D1D1B;
+.sn-paper{width:100%;height:100%;resize:none;border:0;outline:0;-webkit-appearance:none;appearance:none;background-color:transparent;padding:30px 24px 26px;font:inherit;font-size:15px;line-height:28px;color:#1D1D1B;
   background-image:linear-gradient(transparent 27px,rgba(29,29,27,.08) 28px);background-size:100% 28px;background-position:0 30px;unicode-bidi:plaintext}
 .sn-left{position:absolute;bottom:8px;inset-inline-end:12px;font-size:10.5px;opacity:.45;color:#1D1D1B}
 .sn-form.short{grid-template-columns:1fr 1fr auto}
 @media (max-width:640px){.sn-form.short{grid-template-columns:1fr}.sn-card{aspect-ratio:auto;height:260px}}
+
+/* Sticky Notes and Notebook keep one size, whatever is inside; the content scrolls */
+.win{position:relative}
+.win.tall{height:min(760px,calc(100vh - 32px))}
+.win.tall .win-body{flex:1 1 auto;min-height:0;overflow:auto}
+.win.tall .nb{height:100%;min-height:0}
+.win.tall .nb-side,.win.tall .nb-read{max-height:none;height:100%}
+.sn-say.clamp{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.sn-more{font-size:12px;font-weight:600;color:#B8901A;background:none;padding:2px 0;margin-top:2px}
+
+@media (max-width:640px){.win.tall{height:100%}}

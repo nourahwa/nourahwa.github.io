@@ -4,6 +4,9 @@
    short line; both show in About me and in about_me.py.
    ------------------------------------------------------------ */
 window.DESK_PROFILE = {
+  /* how my name shows in each language */
+  name: { en: "NOURAH WA", ar: "نورة" },
+
   role: { en: "Data Analyst · Digital Designer", ar: "محللة بيانات · مصممة رقمية" },
 
   /* the one sentence under my name on the desktop */

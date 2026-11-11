@@ -122,9 +122,12 @@
      The code and the output come from the same text below, so they always match. */
   /* my profile lives in profile.js; the original site's settings are the fallback */
   var PR = window.DESK_PROFILE || { role: { en: "Data analyst", ar: "محللة بيانات" }, bio: S.bio, mission: S.bio, skills: S.skills.map(function (x) { return { en: x.en, ar: x.ar, how: { en: "", ar: "" } }; }), tools: S.tools };
+  function nameIn(lang) { return PR.name ? PR.name[lang === "ar" ? "ar" : "en"] : S.name; }
+  window.DESK_NAME = function () { return nameIn(C.lang()); };
   function meFor(lang) {
     var ar = lang === "ar";
     return {
+      name: nameIn(lang),
       role: ar ? PR.role.ar.replace(" · ", " و") : PR.role.en.replace(" · ", " & ").toLowerCase(),
       hi: ar ? "أهلًا، أنا" : "Hi, I'm", label: ar ? "أدواتي:" : "Toolkit:",
       mission: (PR.mission || PR.bio)[ar ? "ar" : "en"],
@@ -137,7 +140,7 @@
     return [
       "class AboutMe:",
       "    def __init__(self):",
-      '        self.name = "' + S.name + '"',
+      '        self.name = "' + m.name + '"',
       '        self.role = "' + m.role + '"',
       '        self.mission = "' + m.mission + '"',
       "",
@@ -162,7 +165,7 @@
     ].join("\n");
   }
   function aboutOutput(m) {
-    return [m.hi + " " + S.name + " — " + m.role, m.mission, ""]
+    return [m.hi + " " + m.name + " — " + m.role, m.mission, ""]
       .concat(m.skills.map(function (x) { return "• " + x[0] + ": " + x[1]; }))
       .concat(["", m.label + " " + PR.tools.join(" · ")]);
   }
@@ -183,7 +186,7 @@
     w.narrow();
     var box = el("div", "about"), av = el("div", "avatar big"); av.innerHTML = A.avatar(); box.appendChild(av);
     var t = el("div");
-    t.appendChild(el("p", "about-name", S.name));
+    t.appendChild(el("p", "about-name", nameIn(C.lang())));
     t.appendChild(el("p", "muted", C.tr(PR.role)));
     t.appendChild(el("p", "about-bio", C.tr(PR.bio)));
     t.appendChild(el("h3", "", T("Skills", "المهارات")));
@@ -224,7 +227,7 @@
       var b = button("", "f-item locked"); b.innerHTML = A.folder(true);
       b.appendChild(el("span", "", T("Digital Design", "التصميم الرقمي")));
       b.appendChild(el("small", "", T("Locked · coming soon", "مقفل · قريبًا")));
-      b.addEventListener("click", function () { msg.textContent = T("This folder opens once the design work is ready.", "هذا المجلد يفتح لما تجهز أعمال التصميم."); });
+      b.addEventListener("click", function () { msg.textContent = T("This folder opens once the design work is ready.", "يُفتح هذا المجلد عند اكتمال أعمال التصميم."); });
       g.appendChild(a); g.appendChild(b);
       w.body.appendChild(g);
       var msg = el("p", "muted center"); w.body.appendChild(msg);
@@ -249,7 +252,7 @@
       box.appendChild(el("h3", "", repoName(r.name)));
       if (r.description) box.appendChild(el("p", "", r.description));
       if (r.language) box.appendChild(el("p", "muted", r.language));
-      box.appendChild(C.link(r.url, "btn gap-top", T("Open on GitHub ↗", "افتحه في GitHub ↗"), true));
+      box.appendChild(C.link(r.url, "btn gap-top", T("Open on GitHub ↗", "افتح في GitHub ↗"), true));
       w.body.appendChild(box);
     }
     function card(g, pj, repo, first) {
@@ -276,7 +279,7 @@
       crumbs();
       var g = el("div", "files");
       w.body.appendChild(g);
-      var note = el("p", "muted gap-top", T("Open a project to see the analysis, the dashboard and the code on GitHub. New work on GitHub shows up here by itself.", "افتح المشروع وتشوف التحليل والداشبورد والكود في GitHub. أي مشروع جديد أرفعه في GitHub يطلع هنا تلقائيًا."));
+      var note = el("p", "muted gap-top", T("Open a project to see the analysis, the dashboard and the code on GitHub. New work on GitHub shows up here by itself.", "افتح أي مشروع لعرض التحليل ولوحة المؤشرات والكود على GitHub. تظهر المشاريع الجديدة هنا تلقائيًا."));
       w.body.appendChild(note);
       function fill(repos) {
         g.innerHTML = "";
@@ -340,11 +343,11 @@
     tbtn("rake", T("Rake", "مشط"), "≡");
     tbtn("tape", T("Tape", "شريط"), "▭");
     tbtn("eraser", T("Eraser", "ممحاة"), "⌫");
-    tbtn("sticker", T("Stickers", "ستيكر"), "☺");
+    tbtn("sticker", T("Stickers", "ملصقات"), "☺");
     var stickerRow = el("div", "sn-stickers"); stickerRow.hidden = true;
     STICKERS.forEach(function (st, i) { var b = button(st, i ? "" : "on"); b.addEventListener("click", function () { state.sticker = st; stickerRow.querySelectorAll("button").forEach(function (x) { x.classList.toggle("on", x === b); }); }); stickerRow.appendChild(b); });
     var tapes = el("div", "sn-tapes");
-    [["plain", T("Plain tape", "شريط سادة")], ["dots", T("Dotted tape", "شريط منقط")], ["grid", T("Checked tape", "شريط كروهات")]].forEach(function (t) {
+    [["plain", T("Plain tape", "شريط سادة")], ["dots", T("Dotted tape", "شريط منقط")], ["grid", T("Checked tape", "شريط مربعات")]].forEach(function (t) {
       var b = button("", "sn-tape " + t[0] + (state.tape === t[0] ? " on" : "")); b.setAttribute("aria-label", t[1]); b.title = t[1];
       b.addEventListener("click", function () { state.tape = t[0]; state.tool = "tape"; tapes.querySelectorAll("button").forEach(function (x) { x.classList.toggle("on", x === b); }); side.querySelectorAll(".sn-tool").forEach(function (x) { x.classList.toggle("on", x.dataset.tool === "tape"); }); stickerRow.hidden = true; });
       tapes.appendChild(b);
@@ -436,10 +439,21 @@
     if (n.place) head.appendChild(el("span", "", " · " + n.place));
     head.appendChild(el("time", "", when(n.at)));
     t.appendChild(head);
-    if (n.text) { var p = el("p", "sn-say", n.text); p.dir = "auto"; t.appendChild(p); }
+    if (n.text) {
+      var p = el("p", "sn-say clamp", n.text); p.dir = "auto"; t.appendChild(p);
+      setTimeout(function () {
+        if (!p.isConnected) return;
+        var folded = p.clientHeight; p.classList.remove("clamp"); var full = p.scrollHeight;
+        if (full <= folded + 4) return;
+        p.classList.add("clamp");
+        var more = button(T("Read more", "عرض المزيد"), "sn-more");
+        more.addEventListener("click", function () { var open = p.classList.toggle("clamp"); more.textContent = open ? T("Read more", "عرض المزيد") : T("Show less", "عرض أقل"); });
+        p.after(more);
+      }, 0);
+    }
     if (n.img && (/^data:image\/(jpeg|png);base64,/.test(n.img) || /^pinned\/[\w-]+\.(png|jpe?g)$/.test(n.img))) {
       var b = button("", "sn-thumb"), im = document.createElement("img"); im.src = n.img; im.alt = T("Drawing by ", "رسمة ") + (n.name || "");
-      b.appendChild(im); b.setAttribute("aria-label", T("Open the drawing", "كبّر الرسمة"));
+      b.appendChild(im); b.setAttribute("aria-label", T("Open the drawing", "تكبير الرسمة"));
       b.addEventListener("click", function () { if (onImage) onImage(n.img, im.alt); }); t.appendChild(b);
     }
     if (extra) t.appendChild(extra);
@@ -449,6 +463,7 @@
 
   APPS.sticky = function (w) {
     w.title("Sticky Notes");
+    w.tall();
     var stops = [], view = el("div", "sn-view");
     function stopAll() { stops.forEach(function (s) { s(); }); stops = []; }
     w.onClose(stopAll);
@@ -461,18 +476,18 @@
     /* name, where from, and the post button: the same for drawing and writing */
     function postForm(withHi) {
       var form = el("form", "sn-form" + (withHi ? "" : " short")), hp = trap();
-      var name = field("snName", T("Name (optional)", "الاسم (اختياري)"), 40), place = field("snPlace", T("Where from? (optional)", "من وين؟ (اختياري)"), 40);
-      var hi = withHi ? field("snHi", T("Say hi (optional)", "قل مرحبا (اختياري)"), 300) : null;
+      var name = field("snName", T("Name (optional)", "الاسم (اختياري)"), 40), place = field("snPlace", T("Where from? (optional)", "من أين؟ (اختياري)"), 40);
+      var hi = withHi ? field("snHi", T("Say hi (optional)", "رسالة قصيرة (اختياري)"), 300) : null;
       try { name.value = localStorage.getItem("desk-name") || ""; } catch (e) { /* empty */ }
-      var send = el("button", "sn-post", T("post ↗", "أرسل ↗")); send.type = "submit";
+      var send = el("button", "sn-post", T("post ↗", "إرسال ↗")); send.type = "submit";
       [name, place, hi].forEach(function (x) { if (x) form.appendChild(x); });
       form.appendChild(send); form.appendChild(hp);
       return { form: form, name: name, place: place, hi: hi, send: send, trap: hp };
     }
     async function post(f, info, entry, done) {
-      if (!canSend()) { info.textContent = T("Sending is not available right now.", "الإرسال مو متاح حاليًا."); return; }
+      if (!canSend()) { info.textContent = T("Sending is not available right now.", "الإرسال غير متاح حاليًا."); return; }
       if (f.trap.value) { info.textContent = T("Posted. Thank you!", "تم الإرسال، شكرًا لك!"); return; }
-      if (!useDb() && tooSoon("note")) { info.textContent = T("Please wait a few seconds before sending again.", "انتظر ثواني قبل ما ترسل مرة ثانية."); return; }
+      if (!useDb() && tooSoon("note")) { info.textContent = T("Please wait a few seconds before sending again.", "يُرجى الانتظار بضع ثوانٍ قبل الإرسال مرة أخرى."); return; }
       entry.id = newId(); entry.at = Date.now();
       entry.name = clean(f.name.value, 40) || T("Guest", "زائر"); entry.place = clean(f.place.value, 40);
       try { if (clean(f.name.value, 40)) localStorage.setItem("desk-name", entry.name); } catch (err) { /* not remembered */ }
@@ -486,11 +501,11 @@
           lastSend.note = Date.now();
         } else await emailMe("New sticky note from " + entry.name, summary, entry.img);
         local("desk-mynotes", { name: entry.name, place: entry.place, text: entry.text, at: entry.at }, 4);
-        info.textContent = T("Posted! It shows on the wall once I approve it. Thank you!", "تم الإرسال! يطلع في الحائط بعد الموافقة. شكرًا لك!");
+        info.textContent = T("Posted! It shows on the wall once I approve it. Thank you!", "تم الإرسال، وستظهر على الحائط بعد الموافقة. شكرًا لك!");
         if (window.BADGES) window.BADGES.give("note");
         done();
       } catch (err) {
-        info.textContent = err && err.code === "wait" ? T("Please wait a few seconds before sending again.", "انتظر ثواني قبل ما ترسل مرة ثانية.") : err && err.code === "busy" ? T("The wall is busy right now. Try again later.", "الحائط مزحوم حاليًا، جرّب بعدين.") : T("Could not send. Try again in a moment.", "ما تم الإرسال، جرّب بعد شوي.");
+        info.textContent = err && err.code === "wait" ? T("Please wait a few seconds before sending again.", "يُرجى الانتظار بضع ثوانٍ قبل الإرسال مرة أخرى.") : err && err.code === "busy" ? T("The wall is busy right now. Try again later.", "الحائط مزدحم حاليًا، يُرجى المحاولة لاحقًا.") : T("Could not send. Try again in a moment.", "تعذّر الإرسال، يُرجى المحاولة بعد قليل.");
       }
       f.send.disabled = false;
     }
@@ -503,12 +518,12 @@
       un.setAttribute("aria-label", T("Undo", "تراجع"));
       un.addEventListener("click", p.undo); cl.addEventListener("click", p.clear);
       acts.appendChild(un); acts.appendChild(cl);
-      var info = el("p", "sn-hint", T("Draw a little sticky, pick a paper, add your name and say hi. It shows on the wall once I approve it.", "ارسم ستيكي صغير، واختر الورق، واكتب اسمك وقل مرحبا. يطلع في الحائط بعد ما أوافق عليه."));
+      var info = el("p", "sn-hint", T("Draw a little sticky, pick a paper, add your name and say hi. It shows on the wall once I approve it.", "ارسم ملاحظة صغيرة، واختر الورق، وأضف اسمك ورسالة قصيرة. ستظهر على الحائط بعد الموافقة."));
       view.appendChild(acts); view.appendChild(f.form); view.appendChild(info);
       f.form.addEventListener("submit", function (e) {
         e.preventDefault();
         var say = String(f.hi.value || "").trim().slice(0, 300);
-        if (!p.drew() && !say) { info.textContent = T("Draw something or say hi first.", "ارسم شي أو قل مرحبا أول."); return; }
+        if (!p.drew() && !say) { info.textContent = T("Draw something or say hi first.", "ارسم شيئًا أو اكتب رسالة أولًا."); return; }
         var entry = { text: say }; if (p.drew()) entry.img = p.image();
         post(f, info, entry, function () { p.clear(); f.hi.value = ""; });
       });
@@ -519,14 +534,14 @@
       stopAll(); mark(tWrite); view.innerHTML = "";
       var wrap = el("div", "sn-write"), card = el("div", "sn-card"), text = el("textarea", "sn-paper");
       text.id = "snText"; text.maxLength = 600; text.dir = "auto";
-      text.placeholder = T("Write me a note...", "اكتب لي ملاحظة...");
+      text.placeholder = T("Write me a note...", "اكتب ملاحظتك هنا...");
       text.setAttribute("aria-label", T("Your note", "ملاحظتك"));
       var count = el("small", "sn-left", "600");
       text.addEventListener("input", function () { count.textContent = String(600 - text.value.length); });
       card.appendChild(text); card.appendChild(count);
       var papers = el("div", "sn-paperbar");
       papers.appendChild(el("span", "sn-label", T("PAPER", "الورق")));
-      ["#FFFDF8", "#FBF3E4", "#FBE4E8", "#E6EEF8", "#E4F2EA", "#EEE8F8", "#FCF1CF"].forEach(function (c, i) {
+      ["#FFFDF8", "#FFF1C2", "#FFD9DF", "#D6E7FB", "#D4F0DE", "#E5DBFA", "#FFE0C2"].forEach(function (c, i) {
         var b = button("", "sn-pp" + (i ? "" : " on")); b.style.background = c; b.setAttribute("aria-label", c);
         b.addEventListener("click", function () { card.style.background = c; papers.querySelectorAll(".sn-pp").forEach(function (x) { x.classList.toggle("on", x === b); }); });
         papers.appendChild(b);
@@ -534,13 +549,13 @@
       wrap.appendChild(card); wrap.appendChild(papers);
       view.appendChild(wrap);
       var f = postForm(false);
-      var info = el("p", "sn-hint", T("Write a few words, add your name and where you are from. It shows on the wall once I approve it.", "اكتب كم كلمة، واسمك ومن وين أنت. تطلع في الحائط بعد ما أوافق عليها."));
+      var info = el("p", "sn-hint", T("Write a few words, add your name and where you are from. It shows on the wall once I approve it.", "اكتب بضع كلمات، وأضف اسمك ومن أين أنت. ستظهر على الحائط بعد الموافقة."));
       view.appendChild(f.form); view.appendChild(info);
       setTimeout(function () { text.focus(); }, 50);
       f.form.addEventListener("submit", function (e) {
         e.preventDefault();
         var say = String(text.value || "").trim().slice(0, 600);
-        if (!say) { text.focus(); info.textContent = T("Write something first.", "اكتب شي أول."); return; }
+        if (!say) { text.focus(); info.textContent = T("Write something first.", "اكتب شيئًا أولًا."); return; }
         post(f, info, { text: say }, function () { text.value = ""; count.textContent = "600"; });
       });
     }
@@ -548,7 +563,8 @@
     function lightbox(src, alt) {
       var box = el("div", "sn-light"), im = document.createElement("img"); im.src = src; im.alt = alt;
       box.appendChild(im); box.addEventListener("click", function () { box.remove(); });
-      view.appendChild(box);
+      document.getElementById("win").appendChild(box);
+      w.onClose(function () { box.remove(); });
     }
     function wall() {
       stopAll(); mark(tWall); view.innerHTML = "";
@@ -562,12 +578,12 @@
         list.innerHTML = "";
         rows.sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
         count.textContent = rows.length + T(rows.length === 1 ? " note from visitors" : " notes from visitors", " ملاحظة من الزوار");
-        status.hidden = rows.length > 0; status.textContent = T("No notes yet. Be the first!", "ما فيه ملاحظات للحين، كن أول واحد!");
+        status.hidden = rows.length > 0; status.textContent = T("No notes yet. Be the first!", "لا توجد ملاحظات حاليًا. كن أول من يكتب!");
         rows.forEach(function (n) { list.appendChild(noteRow(n, null, lightbox)); });
       }
       STORE.ready.then(function () {
         if (STORE.db) {
-          stops.push(watch("pinned", function (l) { paint(l); }, function () { status.hidden = false; status.textContent = T("Can't reach the wall right now.", "ما قدرنا نوصل للحائط حاليًا."); }));
+          stops.push(watch("pinned", function (l) { paint(l); }, function () { status.hidden = false; status.textContent = T("Can't reach the wall right now.", "تعذّر الوصول إلى الحائط حاليًا."); }));
           return;
         }
         var fixed = fetch("pinned.json", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
@@ -589,7 +605,7 @@
       var pins = {}, notes = [];
       function paint() {
         list.innerHTML = "";
-        status.textContent = notes.length ? T("Only you see this list. Pin a note to show it on the wall.", "هذي القائمة تشوفها أنت بس. ثبّت الملاحظة عشان تطلع في الحائط.") : T("No notes yet.", "ما فيه ملاحظات للحين.");
+        status.textContent = notes.length ? T("Only you see this list. Pin a note to show it on the wall.", "هذه القائمة تظهر لك وحدك. ثبّت الملاحظة لتظهر على الحائط.") : T("No notes yet.", "لا توجد ملاحظات حاليًا.");
         notes.forEach(function (n) {
           var row = el("div", "row"), on = !!pins[n.id];
           var pin = button(on ? T("Unpin", "إلغاء التثبيت") : T("Pin", "ثبّت"), on ? "btn" : "btn light");
@@ -606,7 +622,7 @@
           list.appendChild(noteRow(n, row, lightbox));
         });
       }
-      stops.push(watch("notes", function (l) { notes = l; paint(); }, function () { status.textContent = T("Can't reach notes right now.", "ما قدرنا نوصل للملاحظات حاليًا."); }));
+      stops.push(watch("notes", function (l) { notes = l; paint(); }, function () { status.textContent = T("Can't reach notes right now.", "تعذّر الوصول إلى الملاحظات حاليًا."); }));
       stops.push(watch("pinned", function (l) { pins = {}; l.forEach(function (p) { pins[p.key] = true; }); paint(); }, function () {}));
     }
     wall();
@@ -672,7 +688,7 @@
     try { return new Date(ms).toLocaleDateString(C.lang() === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Riyadh" }); } catch (e) { return ""; }
   }
   function monthOf(ms) {
-    if (!ms) return T("Earlier", "قبل");
+    if (!ms) return T("Earlier", "سابقًا");
     var d = new Date(ms), now = new Date();
     if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()) return T("This month", "هذا الشهر");
     try { return d.toLocaleDateString(C.lang() === "ar" ? "ar-SA-u-ca-gregory-nu-latn" : "en-GB", { month: "long", year: "numeric" }); } catch (e) { return ""; }
@@ -681,6 +697,7 @@
   function noteDir(n) { return /[\u0600-\u06FF]/.test((n.title + n.first).replace(/[^\p{L}]/gu, "").slice(0, 12)) ? "rtl" : "ltr"; }
   APPS.notebook = function (w) {
     w.title("Notebook");
+    w.tall();
     var box = el("div", "nb"), side = el("div", "nb-side"), read = el("div", "nb-read");
     var search = el("input", "nb-search"); search.type = "search"; search.placeholder = T("Search", "بحث"); search.setAttribute("aria-label", T("Search notes", "ابحث في المذكرات"));
     var list = el("div", "nb-list");
@@ -706,7 +723,7 @@
       var q = search.value.trim().toLowerCase();
       var shown = notes.filter(function (n) { return !q || (n.title + " " + n.body).toLowerCase().indexOf(q) >= 0; });
       list.innerHTML = "";
-      if (!shown.length) { list.appendChild(el("p", "nb-empty", notes.length ? T("No notes match.", "ما فيه مذكرات تطابق.") : T("No notes yet.", "ما فيه مذكرات للحين."))); return; }
+      if (!shown.length) { list.appendChild(el("p", "nb-empty", notes.length ? T("No notes match.", "لا توجد مذكرات مطابقة.") : T("No notes yet.", "لا توجد مذكرات حاليًا."))); return; }
       var groups = [], seen = {};
       shown.forEach(function (n) { var g = n.pinned ? T("Pinned", "المثبتة") : monthOf(n.at); if (!seen[g]) { seen[g] = []; groups.push([g, seen[g]]); } seen[g].push(n); });
       groups.sort(function (a, b) { return (b[1][0].pinned ? 1 : 0) - (a[1][0].pinned ? 1 : 0); });
@@ -725,7 +742,7 @@
     loadNotes().then(function (l) {
       notes = l; paint();
       if (notes.length && window.matchMedia("(min-width: 641px)").matches) open(notes.filter(function (n) { return n.pinned; })[0] || notes[0]);
-      else if (!notes.length) read.appendChild(el("p", "nb-empty center", T("Notes I write will show here.", "المذكرات اللي أكتبها بتطلع هنا.")));
+      else if (!notes.length) read.appendChild(el("p", "nb-empty center", T("Notes I write will show here.", "ستظهر هنا المذكرات التي أكتبها.")));
     });
   };
 
@@ -737,30 +754,30 @@
     w.onClose(function () { if (stop) stop(); });
     var head = el("div", "lockhead"); head.innerHTML = A.icon("resume");
     head.appendChild(el("p", "lock-title", T("My CV is shared on request", "السيرة الذاتية تُرسل عند الطلب")));
-    head.appendChild(el("p", "muted center", T("Tell me who you are and I will email it to you.", "عرّفني بنفسك وأرسلها لك على الإيميل.")));
+    head.appendChild(el("p", "muted center", T("Tell me who you are and I will email it to you.", "عرّف بنفسك، وسأرسلها إلى بريدك الإلكتروني.")));
     w.body.appendChild(head);
     var form = el("form", "stack");
-    var name = field("cvName", T("Your name", "اسمك"), 60), mail = field("cvMail", T("Your email", "إيميلك"), 120, "email"), role = field("cvRole", T("Your job title", "مسماك الوظيفي"), 80);
+    var name = field("cvName", T("Your name", "اسمك"), 60), mail = field("cvMail", T("Your email", "بريدك الإلكتروني"), 120, "email"), role = field("cvRole", T("Your job title", "مسماك الوظيفي"), 80);
     var send = el("button", "btn", T("Request my CV", "اطلب السيرة الذاتية")); send.type = "submit";
     [name, mail, role, send].forEach(function (x) { form.appendChild(x); });
     var info = el("p", "muted"); form.appendChild(info);
     var hp = trap(); form.appendChild(hp);
     w.body.appendChild(form);
     STORE.ready.then(function () {
-      if (!canSend()) { send.disabled = true; form.appendChild(bar(T("Requests are not available right now. Email me at ", "الطلب مو متاح حاليًا. راسلني على ") + S.email)); }
+      if (!canSend()) { send.disabled = true; form.appendChild(bar(T("Requests are not available right now. Email me at ", "الطلب غير متاح حاليًا. يمكنك مراسلتي على ") + S.email)); }
       if (STORE.db && STORE.owner) {
         w.body.appendChild(el("h3", "", T("Requests", "الطلبات")));
         var list = el("div", "inbox"), st = el("p", "muted", T("Loading...", "جاري التحميل..."));
         w.body.appendChild(st); w.body.appendChild(list);
         stop = watch("cv", function (l) {
-          list.innerHTML = ""; st.textContent = l.length ? "" : T("No requests yet.", "ما فيه طلبات للحين.");
+          list.innerHTML = ""; st.textContent = l.length ? "" : T("No requests yet.", "لا توجد طلبات حاليًا.");
           l.forEach(function (r) {
             var a = el("article");
             a.appendChild(el("p", "", (r.name || "") + " · " + (r.role || "")));
             a.appendChild(el("small", "", (r.email || "") + " · " + when(r.at)));
             list.appendChild(a);
           });
-        }, function () { st.textContent = T("Can't reach requests right now.", "ما قدرنا نوصل للطلبات حاليًا."); });
+        }, function () { st.textContent = T("Can't reach requests right now.", "تعذّر الوصول إلى الطلبات حاليًا."); });
       }
     });
     form.addEventListener("submit", async function (e) {
@@ -768,7 +785,7 @@
       if (!canSend()) return;
       var r = { id: newId(), name: clean(name.value, 60), email: clean(mail.value, 120), role: clean(role.value, 80), at: Date.now() };
       if (!r.name) { name.focus(); info.textContent = T("Add your name.", "اكتب اسمك."); return; }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email)) { mail.focus(); info.textContent = T("Add a valid email.", "اكتب إيميل صحيح."); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email)) { mail.focus(); info.textContent = T("Add a valid email.", "اكتب بريدًا إلكترونيًا صحيحًا."); return; }
       if (!r.role) { role.focus(); info.textContent = T("Add your job title.", "اكتب مسماك الوظيفي."); return; }
       if (hp.value) { info.textContent = T("Thank you!", "شكرًا لك!"); return; }
       send.disabled = true; info.textContent = T("Sending...", "جاري الإرسال...");
@@ -782,8 +799,8 @@
           lastSend.cv = Date.now();
         }
         else await emailMe("CV request from " + r.name, { name: r.name, email: r.email, job_title: r.role, _replyto: r.email });
-        info.textContent = T("Thank you! I will email my CV to ", "شكرًا لك! بأرسل السيرة الذاتية على ") + r.email; form.reset(); }
-      catch (err) { info.textContent = err && err.code === "wait" ? T("Please wait a few seconds before sending again.", "انتظر ثواني قبل ما ترسل مرة ثانية.") : T("Could not send. Try again in a moment.", "ما تم الإرسال، جرّب بعد شوي."); }
+        info.textContent = T("Thank you! I will email my CV to ", "شكرًا لك! سأرسل السيرة الذاتية إلى ") + r.email; form.reset(); }
+      catch (err) { info.textContent = err && err.code === "wait" ? T("Please wait a few seconds before sending again.", "يُرجى الانتظار بضع ثوانٍ قبل الإرسال مرة أخرى.") : T("Could not send. Try again in a moment.", "تعذّر الإرسال، يُرجى المحاولة بعد قليل."); }
       send.disabled = false;
     });
   };
@@ -844,7 +861,7 @@
         gridEl.appendChild(b);
       }
       if (full && !bad && window.BADGES) window.BADGES.give("sudoku");
-      status.textContent = full && !bad ? T("Solved! Well done.", "حليتها! أحسنت.") : sel ? T("Pick a number.", "اختر رقم.") : T("Tap an empty square.", "اضغط مربع فاضي.");
+      status.textContent = full && !bad ? T("Solved! Well done.", "أحسنت! حللت اللغز.") : sel ? T("Pick a number.", "اختر رقمًا.") : T("Tap an empty square.", "اختر مربعًا فارغًا.");
     }
     for (var d = 1; d <= 10; d++) {
       (function (d) {
@@ -877,7 +894,7 @@
     var body = el("textarea", "mail-body"); body.id = "mailBody"; body.maxLength = 3000; body.setAttribute("aria-label", T("Message", "الرسالة"));
     form.appendChild(row(T("To", "إلى"), to));
     form.appendChild(row(T("Name", "الاسم"), name));
-    form.appendChild(row(T("Your email", "إيميلك"), from));
+    form.appendChild(row(T("Your email", "بريدك الإلكتروني"), from));
     form.appendChild(row(T("Subject", "الموضوع"), subj));
     form.appendChild(body);
     w.body.appendChild(form);
@@ -890,7 +907,7 @@
         var st = el("p", "muted", T("Loading...", "جاري التحميل...")), list = el("div", "inbox");
         w.body.appendChild(st); w.body.appendChild(list);
         stop = watch("mail", function (l) {
-          list.innerHTML = ""; st.textContent = l.length ? "" : T("No messages yet.", "ما فيه رسائل للحين.");
+          list.innerHTML = ""; st.textContent = l.length ? "" : T("No messages yet.", "لا توجد رسائل حاليًا.");
           l.forEach(function (m) {
             var a = el("article");
             a.appendChild(el("p", "", (m.subject || T("(no subject)", "(بدون موضوع)")) + " · " + (m.name || "")));
@@ -898,7 +915,7 @@
             var t = el("p", "muted", m.text || ""); t.style.whiteSpace = "pre-wrap"; t.style.marginTop = "6px"; a.appendChild(t);
             list.appendChild(a);
           });
-        }, function () { st.textContent = T("Can't reach messages right now.", "ما قدرنا نوصل للرسائل حاليًا."); });
+        }, function () { st.textContent = T("Can't reach messages right now.", "تعذّر الوصول إلى الرسائل حاليًا."); });
       }
     });
     /* the message goes to my email through FormSubmit (free, no account); if that cannot be reached
@@ -908,7 +925,7 @@
     send.addEventListener("click", async function () {
       var m = { id: newId(), name: clean(name.value, 60), email: clean(from.value, 120), subject: clean(subj.value, 120), text: String(body.value || "").trim().slice(0, 3000), at: Date.now() };
       if (!m.name) { name.focus(); info.textContent = T("Add your name.", "اكتب اسمك."); return; }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m.email)) { from.focus(); info.textContent = T("Add your email so I can reply.", "اكتب إيميلك عشان أرد عليك."); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m.email)) { from.focus(); info.textContent = T("Add your email so I can reply.", "اكتب بريدك الإلكتروني لأتمكن من الرد عليك."); return; }
       if (!m.text) { body.focus(); info.textContent = T("Write your message.", "اكتب رسالتك."); return; }
       if (hp.value) { info.textContent = T("Sent.", "تم الإرسال."); return; }
       send.disabled = true; info.textContent = T("Sending...", "جاري الإرسال...");
@@ -925,16 +942,16 @@
       }
       if (!ok && !wait) { try { await toEmail(m); ok = true; } catch (err) { wait = err && err.code === "wait"; } }
       if (!ok && useDb()) { try { await append("mail", m, 10); ok = true; } catch (err) { /* not sent */ } }
-      if (ok) { info.textContent = T("Sent. I will reply to ", "تم الإرسال، بأرد عليك على ") + m.email; name.value = from.value = subj.value = body.value = ""; }
-      else if (wait) info.textContent = T("Please wait a few seconds before sending again.", "انتظر ثواني قبل ما ترسل مرة ثانية.");
-      else info.textContent = T("Could not send. Please email me at ", "ما تم الإرسال، راسلني على ") + S.email;
+      if (ok) { info.textContent = T("Sent. I will reply to ", "تم الإرسال، وسأرد عليك على ") + m.email; name.value = from.value = subj.value = body.value = ""; }
+      else if (wait) info.textContent = T("Please wait a few seconds before sending again.", "يُرجى الانتظار بضع ثوانٍ قبل الإرسال مرة أخرى.");
+      else info.textContent = T("Could not send. Please email me at ", "تعذّر الإرسال، يمكنك مراسلتي على ") + S.email;
       send.disabled = false;
     });
   };
 
   /* ---------- dashboards gallery ---------- */
   APPS.gallery = function (w) {
-    w.title(T("Dashboards", "معرض الشاشات"));
+    w.title(T("Dashboards", "معرض اللوحات"));
     function grid() {
       w.body.innerHTML = "";
       var g = el("div", "gallery");
@@ -949,7 +966,7 @@
     }
     function big(p) {
       w.body.innerHTML = "";
-      var top = el("div", "row"), back = button("← " + T("All dashboards", "كل الشاشات"), "btn light");
+      var top = el("div", "row"), back = button("← " + T("All dashboards", "كل اللوحات"), "btn light");
       back.addEventListener("click", grid); top.appendChild(back);
       var open = C.link("#project/" + p.id, "btn", T("Open project", "افتح المشروع"));
       open.addEventListener("click", function () { try { sessionStorage.setItem("desk-back", "gallery"); } catch (e) { /* back goes home */ } });
@@ -967,23 +984,23 @@
     w.title(T("Help", "المساعدة"));
     w.narrow();
     var tips = [
-      [T("The desktop", "سطح المكتب"), T("Click an icon on the right to open it in a window. Close it with the red dot, a click outside it, or Esc.", "اضغط أي أيقونة على اليمين وتنفتح في نافذة. تقفلها بالنقطة الحمراء أو بالضغط برّا النافذة أو زر Esc.")],
-      [T("The sun menu", "قائمة الشمس"), T("The sun at the top left opens night mode, tidy up icons, and Shut down, which goes back to the login screen.", "الشمس فوق يسار فيها: الوضع الليلي، وترتيب الأيقونات، وإيقاف التشغيل اللي يرجعك لشاشة الدخول.")],
-      [T("My name", "اسمي"), T("Click my name in the menu bar to read About me. The >_ button next to it opens a small Python file that introduces me.", "اضغط اسمي في الشريط العلوي وتطلع نبذة عني، والزر ‎>_‎ جنبه يفتح ملف بايثون صغير يعرّف فيني.")],
-      [T("Explore bar", "شريط الاستكشاف"), T("The small bar at the top right fills up as you explore. Click it to see what is left.", "الشريط الصغير فوق يمين يتعبى كل ما استكشفت أكثر، اضغطه وتشوف وش باقي.")],
-      [T("Background", "الخلفية"), T("Pick a colour or a photo under the clock, or swipe the desktop to the left.", "اختر لون أو صورة تحت الساعة، أو اسحب الشاشة لليسار.")],
-      [T("Sound and language", "الصوت واللغة"), T("The speaker turns the click sound on or off. The letter A or ع switches English and Arabic.", "السماعة تشغّل صوت النقر أو تطفيه، والحرف A أو ع يبدّل بين الإنجليزي والعربي.")],
-      [T("Screensaver", "شاشة التوقف"), T("Leave the page for 30 seconds and a short Python code draws the sun. Move the mouse to go back.", "إذا تركت الصفحة 30 ثانية يطلع كود بايثون يرسم الشمس. حرّك الماوس وترجع.")],
-      [T("Projects", "المشاريع"), T("The Data & Business Analysis folder fills itself from my GitHub. Each project has the analysis, the dashboard and the code. Back returns you to the list.", "مجلد تحليل البيانات والأعمال يتعبى تلقائيًا من GitHub. كل مشروع فيه التحليل والداشبورد والكود، والرجوع يرجعك للقائمة.")],
-      [T("Move icons", "تحريك الأيقونات"), T("Drag any icon on the desktop to place it where you like. Tidy up icons in the sun menu puts them back.", "اسحب أي أيقونة وحطها وين تبي. «ترتيب الأيقونات» في قائمة الشمس يرجعها مكانها.")],
-      [T("Day and night", "النهار والليل"), T("Night mode in the sun menu darkens the windows and the bars. The background stays as it is.", "الوضع الليلي في قائمة الشمس يغمّق النوافذ والأشرطة، والخلفية تبقى مثل ما هي.")],
-      [T("Notebook", "المذكرات"), T("Short notes I write about data, design and what I am learning. Search them or pick one from the list.", "مذكرات أكتبها عن البيانات والتصميم واللي أتعلمه. ابحث فيها أو اختر وحدة من القائمة.")],
-      [T("Sticky Notes", "ملاحظات الزوار"), T("Draw a little note with pens, tape and stickers, add your name and say hi. It shows on the wall once I approve it.", "ارسم ملاحظة بالأقلام والشرائط والستيكرات، واكتب اسمك وقل مرحبا. تطلع في الحائط بعد ما أوافق عليها.")],
-      [T("CV", "السيرة الذاتية"), T("Ask for my CV with your name, email and job title.", "اطلب السيرة باسمك وإيميلك ومسماك الوظيفي.")],
+      [T("The desktop", "سطح المكتب"), T("Click an icon on the right to open it in a window. Close it with the red dot, a click outside it, or Esc.", "اضغط أي أيقونة على اليمين لفتحها في نافذة، وأغلقها بالنقطة الحمراء أو بالضغط خارجها أو بمفتاح Esc.")],
+      [T("The sun menu", "قائمة الشمس"), T("The sun at the top left opens night mode, tidy up icons, and Shut down, which goes back to the login screen.", "تضم قائمة الشمس أعلى اليسار: الوضع الليلي، وترتيب الأيقونات، وإيقاف التشغيل للعودة إلى شاشة الدخول.")],
+      [T("My name", "اسمي"), T("Click my name in the menu bar to read About me. The >_ button next to it opens a small Python file that introduces me.", "اضغط اسمي في الشريط العلوي لعرض النبذة، ويفتح الزر ‎>_‎ بجانبه ملف بايثون قصيرًا يعرّف بي.")],
+      [T("Explore bar", "شريط الاستكشاف"), T("The small bar at the top right fills up as you explore. Click it to see what is left.", "يمتلئ الشريط الصغير أعلى اليمين كلما استكشفت أكثر، واضغطه لمعرفة ما تبقّى.")],
+      [T("Background", "الخلفية"), T("Pick a colour or a photo under the clock, or swipe the desktop to the left.", "اختر لونًا أو صورة أسفل الساعة، أو اسحب الشاشة إلى اليسار.")],
+      [T("Sound and language", "الصوت واللغة"), T("The speaker turns the click sound on or off. The letter A or ع switches English and Arabic.", "تشغّل السماعة صوت النقر أو توقفه، ويبدّل الحرف A أو ع بين الإنجليزية والعربية.")],
+      [T("Screensaver", "شاشة التوقف"), T("Leave the page for 30 seconds and a short Python code draws the sun. Move the mouse to go back.", "بعد 30 ثانية من عدم الاستخدام يظهر كود بايثون يرسم الشمس، وحرّك المؤشر للعودة.")],
+      [T("Projects", "المشاريع"), T("The Data & Business Analysis folder fills itself from my GitHub. Each project has the analysis, the dashboard and the code. Back returns you to the list.", "يُحدَّث مجلد تحليل البيانات والأعمال تلقائيًا من GitHub، ويضم كل مشروع التحليل ولوحة المؤشرات والكود.")],
+      [T("Move icons", "تحريك الأيقونات"), T("Drag any icon on the desktop to place it where you like. Tidy up icons in the sun menu puts them back.", "اسحب أي أيقونة إلى المكان الذي تريده، ويعيدها خيار «ترتيب الأيقونات» في قائمة الشمس إلى مكانها.")],
+      [T("Day and night", "النهار والليل"), T("Night mode in the sun menu darkens the windows and the bars. The background stays as it is.", "يُعتّم الوضع الليلي النوافذ والأشرطة، وتبقى الخلفية كما هي.")],
+      [T("Notebook", "المذكرات"), T("Short notes I write about data, design and what I am learning. Search them or pick one from the list.", "مذكرات أكتبها عن البيانات والتصميم وما أتعلّمه، يمكنك البحث فيها أو اختيار إحداها من القائمة.")],
+      [T("Sticky Notes", "ملاحظات الزوار"), T("Draw a little note with pens, tape and stickers, add your name and say hi. It shows on the wall once I approve it.", "اكتب ملاحظة أو ارسمها بالأقلام والشرائط والملصقات، وأضف اسمك. تظهر على الحائط بعد الموافقة.")],
+      [T("CV", "السيرة الذاتية"), T("Ask for my CV with your name, email and job title.", "اطلب السيرة الذاتية باسمك وبريدك الإلكتروني ومسماك الوظيفي.")],
       [T("Sudoku", "سودوكو"), T("A quick puzzle for a break.", "لغز سريع للاستراحة.")],
-      [T("Data lab", "مختبر البيانات"), T("Drop a CSV file and get a quick profile of every column. The file stays in your browser.", "حط ملف CSV ويطلع لك ملخص لكل عمود، والملف ما يطلع من متصفحك.")],
-      [T("Contact", "تواصل"), T("Write a message and send it straight to my email.", "اكتب رسالتك وتوصل لإيميلي على طول.")],
-      [T("Dock", "الشريط السفلي"), T("The tools I work with, for data and for design. Hover to see each name.", "الأدوات اللي أشتغل فيها للبيانات والتصميم، وقّف عليها وتشوف اسمها.")]
+      [T("Data lab", "مختبر البيانات"), T("Drop a CSV file and get a quick profile of every column. The file stays in your browser.", "أضف ملف CSV لتحصل على ملخص لكل عمود، ويبقى الملف داخل متصفحك.")],
+      [T("Contact", "تواصل"), T("Write a message and send it straight to my email.", "اكتب رسالتك وستصل إلى بريدي الإلكتروني مباشرة.")],
+      [T("Dock", "الشريط السفلي"), T("The tools I work with, for data and for design. Hover to see each name.", "الأدوات التي أعمل بها في البيانات والتصميم، مرّر المؤشر عليها لمعرفة اسمها.")]
     ];
     var list = el("div", "help");
     tips.forEach(function (t) { var r = el("div", "help-row"); r.appendChild(el("b", "", t[0])); r.appendChild(el("p", "", t[1])); list.appendChild(r); });

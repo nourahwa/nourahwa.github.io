@@ -350,7 +350,7 @@
     b.setAttribute("aria-label", T("Explored ", "استكشفت ") + n + T(" of ", " من ") + total);
     b.title = b.getAttribute("aria-label");
     var m = $("progMenu"); m.innerHTML = "";
-    m.appendChild(el("p", "prog-head", n === total ? T("You found everything. Thank you!", "لقيت كل شي، شكرًا لك!") : T("Explore the desktop to fill the bar", "استكشف سطح المكتب وتتعبى الشريط")));
+    m.appendChild(el("p", "prog-head", n === total ? T("You found everything. Thank you!", "اكتشفت كل شيء، شكرًا لك!") : T("Explore the desktop to fill the bar", "استكشف سطح المكتب ليمتلئ الشريط")));
     window.BADGES.list().forEach(function (x) {
       var r = el("div", "prog-row" + (x.on ? " on" : ""));
       r.appendChild(el("span", "prog-check", x.on ? "✓" : ""));
@@ -367,7 +367,7 @@
   function soundIcon() {
     $("soundBtn").innerHTML = A.speaker(sound);
     $("soundBtn").setAttribute("aria-pressed", String(sound));
-    $("soundBtn").setAttribute("aria-label", sound ? T("Sound on", "الصوت شغّال") : T("Sound off", "الصوت مطفي"));
+    $("soundBtn").setAttribute("aria-label", sound ? T("Sound on", "الصوت مفعّل") : T("Sound off", "الصوت متوقف"));
     $("soundBtn").title = $("soundBtn").getAttribute("aria-label");
   }
   /* a short soft "tick", made from a little filtered noise. Phones only allow sound after a tap, so the
@@ -422,6 +422,7 @@
       body: $("winBody"),
       title: function (t) { $("winTitle").textContent = t; },
       narrow: function () { win.classList.add("narrow"); },
+      tall: function () { win.classList.add("tall"); },
       tool: function (t) { var b = el("button", "", t); b.type = "button"; $("winTools").appendChild(b); return b; },
       clearTools: function () { $("winTools").innerHTML = ""; },
       onClose: function (fn) { closers.push(fn); },
@@ -539,7 +540,7 @@
     $("sunBtn").innerHTML = A.sun();
     setMode(document.documentElement.dataset.mode === "night");
     prog();
-    $("mbName").textContent = S.name;
+    $("mbName").textContent = (window.DESK_NAME ? window.DESK_NAME() : S.name);
     $("mbName").title = T("About me", "نبذة عني");
     $("sunBtn").setAttribute("aria-label", T("Menu", "القائمة"));
     /* the language shows as a letter, like the input menu on a Mac */
@@ -564,10 +565,10 @@
     document.documentElement.dir = "ltr";
     $("helpBtn").textContent = T("Help", "مساعدة");
     soundIcon();
-    $("loginName").textContent = S.name;
+    $("loginName").textContent = (window.DESK_NAME ? window.DESK_NAME() : S.name);
     $("loginGo").textContent = T("Enter →", "دخول ←");
-    $("loginHint").textContent = T("No password. Click to enter.", "بدون كلمة مرور، اضغط للدخول.");
-    $("introName").textContent = S.name;
+    $("loginHint").textContent = T("No password. Click to enter.", "دون كلمة مرور، اضغط للدخول.");
+    $("introName").textContent = (window.DESK_NAME ? window.DESK_NAME() : S.name);
     var PR = window.DESK_PROFILE;
     $("introRole").textContent = PR ? (C.lang() === "ar" ? PR.role.ar : PR.role.en.toUpperCase()) : T("DATA ANALYST", "محللة بيانات");
     $("introBio").textContent = PR ? C.tr(PR.line) : C.tr(S.bio);
