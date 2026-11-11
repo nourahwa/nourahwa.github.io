@@ -65,6 +65,15 @@ for r in repos:
     })
 rows.sort(key=lambda r: r["pushed"], reverse=True)
 
+# only write when something changed, so the site is not republished for nothing
+try:
+    with open("repos.json", encoding="utf-8") as f:
+        if json.load(f).get("repos") == rows:
+            print("No change in the repository list")
+            raise SystemExit(0)
+except (FileNotFoundError, ValueError):
+    pass
+
 with open("repos.json", "w", encoding="utf-8") as f:
     json.dump({"updated": datetime.now(timezone.utc).isoformat(timespec="seconds"), "repos": rows}, f, ensure_ascii=False, indent=2)
 print(f"{len(rows)} repositories written to repos.json")
