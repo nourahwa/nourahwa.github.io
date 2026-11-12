@@ -379,7 +379,7 @@
     return audio;
   }
   function unlock() {
-    if (unlocked) return; unlocked = true;
+    if (unlocked || !/iP(hone|ad|od)/.test(navigator.userAgent + (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.platform) ? "iPad" : ""))) return; unlocked = true;
     try {
       var n = 800, b = new ArrayBuffer(44 + n * 2), v = new DataView(b);
       [[0, 0x52494646], [8, 0x57415645], [12, 0x666d7420], [36, 0x64617461]].forEach(function (x) { v.setUint32(x[0], x[1]); });
@@ -404,9 +404,16 @@
       src.connect(f); f.connect(g); g.connect(a.destination); src.start(t);
     } catch (e) { /* no sound here */ }
   }
-  ["pointerdown", "touchend", "keydown"].forEach(function (k) { window.addEventListener(k, function () { if (sound) { unlock(); try { ctx(); } catch (e) { /* none */ } } }, { once: true, passive: true }); });
-  $("soundBtn").addEventListener("click", function () { sound = !sound; try { localStorage.setItem("desk-sound", sound ? "on" : "off"); } catch (e) { /* not remembered */ } soundIcon(); click(); });
-  document.addEventListener("pointerdown", function (e) { if (e.target.closest("button,a,.tile")) click(); });
+  /* keep trying to wake the sound on real gestures until the browser says it is running */
+  function wake() {
+    if (!sound) return;
+    unlock();
+    try { var a = ctx(); if (a.state === "running") ["click", "touchend", "keydown"].forEach(function (k) { window.removeEventListener(k, wake, true); }); } catch (e) { /* none */ }
+  }
+  ["click", "touchend", "keydown"].forEach(function (k) { window.addEventListener(k, wake, true); });
+  $("soundBtn").addEventListener("click", function () { sound = !sound; try { localStorage.setItem("desk-sound", sound ? "on" : "off"); } catch (e) { /* not remembered */ } soundIcon(); });
+  /* Safari only lets a page make sound from a click or a key press, so the tick plays on click */
+  document.addEventListener("click", function (e) { if (e.target.closest("button,a,.tile,.icon")) click(); });
 
   /* ---------- the window ---------- */
   var current = null, closers = [], keyFn = null, back = null;

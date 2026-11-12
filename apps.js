@@ -439,25 +439,21 @@
     if (n.place) head.appendChild(el("span", "", " · " + n.place));
     head.appendChild(el("time", "", when(n.at)));
     t.appendChild(head);
-    if (n.text) {
-      var p = el("p", "sn-say clamp", n.text); p.dir = "auto"; t.appendChild(p);
-      setTimeout(function () {
-        if (!p.isConnected) return;
-        var folded = p.clientHeight; p.classList.remove("clamp"); var full = p.scrollHeight;
-        if (full <= folded + 4) return;
-        p.classList.add("clamp");
-        var more = button(T("Read more", "عرض المزيد"), "sn-more");
-        more.addEventListener("click", function () { var open = p.classList.toggle("clamp"); more.textContent = open ? T("Read more", "عرض المزيد") : T("Show less", "عرض أقل"); });
-        p.after(more);
-      }, 0);
-    }
+    if (n.text) { var p = el("p", "sn-say clamp", n.text); p.dir = "auto"; t.appendChild(p); }
     if (n.img && (/^data:image\/(jpeg|png);base64,/.test(n.img) || /^pinned\/[\w-]+\.(png|jpe?g)$/.test(n.img))) {
       var b = button("", "sn-thumb"), im = document.createElement("img"); im.src = n.img; im.alt = T("Drawing by ", "رسمة ") + (n.name || "");
       b.appendChild(im); b.setAttribute("aria-label", T("Open the drawing", "تكبير الرسمة"));
-      b.addEventListener("click", function () { if (onImage) onImage(n.img, im.alt); }); t.appendChild(b);
+      t.appendChild(b);
     }
     if (extra) t.appendChild(extra);
     a.appendChild(t);
+    /* the whole row opens the note in full, short or long, written or drawn */
+    if (onImage) {
+      a.classList.add("can-open"); a.tabIndex = 0; a.setAttribute("role", "button");
+      a.setAttribute("aria-label", T("Open the note from ", "افتح ملاحظة ") + (n.name || ""));
+      a.addEventListener("click", function (e) { if (!e.target.closest(".row")) onImage(n); });
+      a.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onImage(n); } });
+    }
     return a;
   }
 
@@ -560,11 +556,28 @@
       });
     }
 
-    function lightbox(src, alt) {
-      var box = el("div", "sn-light"), im = document.createElement("img"); im.src = src; im.alt = alt;
-      box.appendChild(im); box.addEventListener("click", function () { box.remove(); });
+    /* one note, in full, on its own sticky over the window */
+    function lightbox(n) {
+      var box = el("div", "sn-light"), card = el("article", "sn-full");
+      card.dir = /[\u0600-\u06FF]/.test((n.text || n.name || "").slice(0, 20)) ? "rtl" : "ltr";
+      var x = button("×", "sn-x"); x.setAttribute("aria-label", T("Close", "إغلاق"));
+      var head = el("header", "sn-fhead");
+      head.appendChild(el("span", "sn-av", (String(n.name || "?").trim()[0] || "?").toUpperCase()));
+      var who = el("div"); who.appendChild(el("b", "", n.name || T("Guest", "زائر")));
+      who.appendChild(el("small", "", [n.place, longDate(n.at)].filter(Boolean).join(" · ")));
+      head.appendChild(who); head.appendChild(x); card.appendChild(head);
+      if (n.img && (/^data:image\/(jpeg|png);base64,/.test(n.img) || /^pinned\/[\w-]+\.(png|jpe?g)$/.test(n.img))) {
+        var im = document.createElement("img"); im.src = n.img; im.alt = T("Drawing by ", "رسمة ") + (n.name || ""); im.className = "sn-fimg"; card.appendChild(im);
+      }
+      if (n.text) { var p = el("p", "sn-ftext", n.text); p.dir = "auto"; card.appendChild(p); }
+      box.appendChild(card);
+      function close() { box.remove(); document.removeEventListener("keydown", esc, true); }
+      function esc(e) { if (e.key === "Escape") { e.stopPropagation(); close(); } }
+      box.addEventListener("click", function (e) { if (e.target === box || e.target === x) close(); });
+      document.addEventListener("keydown", esc, true);
       document.getElementById("win").appendChild(box);
-      w.onClose(function () { box.remove(); });
+      w.onClose(close);
+      x.focus();
     }
     function wall() {
       stopAll(); mark(tWall); view.innerHTML = "";
