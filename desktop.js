@@ -394,13 +394,14 @@
     try {
       var a = ctx(), t = a.currentTime;
       if (!tickBuf) {
-        var len = Math.floor(a.sampleRate * 0.03); tickBuf = a.createBuffer(1, len, a.sampleRate);
+        var len = Math.floor(a.sampleRate * 0.022); tickBuf = a.createBuffer(1, len, a.sampleRate);
         var d = tickBuf.getChannelData(0);
         for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 4);
       }
       var src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
-      src.buffer = tickBuf; f.type = "bandpass"; f.frequency.value = 2400; f.Q.value = 0.9;
-      g.gain.setValueAtTime(0.55, t);
+      /* quiet and low: a soft tap, not a beep */
+      src.buffer = tickBuf; f.type = "lowpass"; f.frequency.value = 1500; f.Q.value = 0.5;
+      g.gain.setValueAtTime(0.12, t);
       src.connect(f); f.connect(g); g.connect(a.destination); src.start(t);
     } catch (e) { /* no sound here */ }
   }
