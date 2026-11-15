@@ -1,0 +1,157 @@
+/* Additions on top of desktop.css: the new font, coarse grain over the photos, the loading screen,
+   the ribbon in the menu bar, the intro with the ID card, folders one under another with a sample
+   on hover, and a faint drawing behind each window. Colours are the site colours in settings.js. */
+:root{
+  --sans:"Funnel Display","Helvetica Neue",Arial,sans-serif; --font:var(--sans); --font-ar:"Readex Pro","Funnel Display",Tahoma,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --x-ink:#0D1E2F; --x-navy:#172D43; --x-pine:#21392E; --x-sky:#88C9E2; --x-ice:#E6F3F8; --x-pink:#E2AFB1; --x-gold:#F6E7A1;
+}
+body{font-family:var(--font)}
+html[lang=ar] body{font-family:var(--font-ar)}
+
+/* ---------- coarse grain, and the photos toned to the site colours ---------- */
+body::after{opacity:.95!important;mix-blend-mode:overlay!important;background-size:170px 170px!important;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.5' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 1.9 -.3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")!important;
+  animation:grain 1.4s steps(5) infinite}
+@keyframes grain{0%,100%{background-position:0 0}20%{background-position:-37px 21px}40%{background-position:28px -33px}60%{background-position:-19px -12px}80%{background-position:33px 29px}}
+:root.photo body::before{
+  background:linear-gradient(165deg,rgba(13,30,47,.42),rgba(33,57,46,.18) 45%,rgba(226,175,177,.16)),
+    radial-gradient(ellipse 60% 45% at 22% 14%,rgba(0,0,0,.38),rgba(0,0,0,0) 70%),
+    var(--photo) center / cover no-repeat!important;
+  filter:saturate(.78) contrast(1.06)}
+
+/* ---------- loading screen ---------- */
+.loader{position:fixed;inset:0;z-index:95;display:grid;place-items:center;font-family:var(--mono);cursor:pointer;outline:none}
+.ld-half{position:absolute;left:0;right:0;height:50.5%;background:linear-gradient(180deg,var(--x-ink),var(--x-navy));transition:transform .9s cubic-bezier(.77,0,.18,1)}
+.ld-top{top:0}
+.ld-bottom{bottom:0;background:linear-gradient(0deg,var(--x-ink),var(--x-navy))}
+.loader.out{pointer-events:none}
+.loader.out .ld-half{transition-delay:.35s}
+.loader.out .ld-top{transform:translateY(-101%)}
+.loader.out .ld-bottom{transform:translateY(101%)}
+.loader.out .ld-center,.loader.out .ld-lines,.loader.out .ld-stream,.loader.out .ld-skip{opacity:0;transition:opacity .25s .25s}
+.ld-center{position:relative;z-index:2;text-align:center}
+.ld-word{font-size:12px;letter-spacing:.42em;color:var(--x-ice)}
+html[lang=ar] .ld-word{letter-spacing:.05em;font-family:var(--font-ar);font-size:14px}
+.ld-pct{margin-top:44px;font-size:20px;letter-spacing:.3em;color:var(--x-pink);font-weight:500}
+.ld-lines{position:absolute;inset:0;overflow:hidden;z-index:1}
+.ld-line{position:absolute;left:0;height:1px;width:200%;
+  background:repeating-linear-gradient(90deg,currentColor 0 var(--d,38px),transparent var(--d,38px) calc(var(--d,38px) + var(--g,22px)));
+  animation:ldrun var(--s,3s) linear infinite}
+.ld-line.thick{height:2px}
+.ld-line.rev{animation-direction:reverse}
+@keyframes ldrun{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+.loader.fast .ld-line{animation-duration:.45s!important}
+.ld-stream{position:absolute;left:0;right:0;bottom:13%;height:22px;overflow:hidden;font-size:9px;line-height:20px;color:var(--x-sky);opacity:.7;white-space:nowrap;z-index:1;
+  border-top:1px solid rgba(136,201,226,.45);border-bottom:1px solid rgba(136,201,226,.45)}
+.ld-stream span{display:inline-block;width:max-content;animation:ldrun 7s linear infinite}
+.ld-skip{position:absolute;bottom:24px;z-index:2;font-size:10px;letter-spacing:.3em;color:var(--x-ice);opacity:.55}
+html[lang=ar] .ld-skip{letter-spacing:0;font-family:var(--font-ar);font-size:12px}
+
+/* ---------- the ribbon in the menu bar: sun, Portfolio, my name ---------- */
+.ribbon{display:flex;align-items:center;gap:8px;height:34px;margin-inline-start:-14px;padding-inline:12px 34px;flex:none;
+  background:linear-gradient(90deg,var(--x-ink),var(--x-navy));color:var(--x-ice);
+  clip-path:polygon(0 0,100% 0,calc(100% - 16px) 100%,0 100%);box-shadow:inset 0 -2px 0 var(--x-pink);position:relative}
+.ribbon::after{content:"";position:absolute;right:14px;top:6px;bottom:6px;width:2px;background:var(--x-pink);transform:skewX(25deg);opacity:.85}
+.ribbon .sun-btn{color:var(--x-ice,#E6F3F8)}
+.ribbon .sun-btn .ray{animation:none}
+.ribbon .sun-btn:hover{background:rgba(230,243,248,.1)}
+.ribbon .mb-name{color:var(--x-ice);letter-spacing:.14em;font-weight:700}
+html[lang=ar] .ribbon .mb-name{letter-spacing:0}
+.rb-port{font-family:var(--mono);font-size:10.5px;letter-spacing:.26em;color:var(--x-sky);white-space:nowrap}
+html[lang=ar] .rb-port{font-family:var(--font-ar);letter-spacing:0;font-size:12px}
+:root[data-mode=night] .ribbon{background:linear-gradient(90deg,#070f18,var(--x-ink))}
+
+/* ---------- intro with the ID card ---------- */
+.intro{width:min(1000px,100% - 320px);gap:clamp(18px,3vw,44px);align-items:flex-start}
+.intro-text{flex:1 1 auto;max-width:56ch}
+.intro-hello{font-family:var(--mono);font-size:12px;letter-spacing:.22em;color:var(--x-pink);min-height:1.4em}
+html[lang=ar] .intro-hello{font-family:var(--font-ar);letter-spacing:0;font-size:14px}
+.intro-name{font-size:clamp(30px,3.6vw,48px);font-weight:800;letter-spacing:.01em;line-height:1;margin-top:6px}
+.intro-role{font-family:var(--mono);font-weight:500;letter-spacing:.22em;margin-top:10px}
+html[lang=ar] .intro-role{font-family:var(--font-ar);letter-spacing:0;font-size:13px}
+.intro-bio{font-size:15px;margin-top:12px}
+.intro-about{font-size:13.5px;line-height:1.7;margin-top:8px;opacity:.82;max-width:52ch}
+html[lang=ar] .intro-bio,html[lang=ar] .intro-about{line-height:1.9}
+.glyph{font-family:var(--mono);color:var(--x-sky);opacity:.9}
+.id-card{flex:0 0 clamp(250px,26vw,340px);transform:rotate(-2deg);transition:transform .5s;filter:drop-shadow(0 16px 32px rgba(13,30,47,.45));margin-top:4px}
+.id-card:hover{transform:rotate(0) translateY(-4px)}
+.id-card svg{width:100%;height:auto}
+:root.photo .id-card{filter:drop-shadow(0 16px 32px rgba(0,0,0,.55))}
+
+/* ---------- folders one under another; they rise in, a sample shows on hover ---------- */
+@media (min-width:901px){
+  .icons{top:62px;bottom:auto;grid-template-rows:none;grid-auto-flow:row;grid-auto-columns:auto;grid-template-columns:200px;gap:2px;direction:ltr}
+}
+.icon{flex-direction:row;justify-content:flex-start;gap:12px;padding:6px 14px 6px 8px;border-radius:10px;text-align:start;position:relative;overflow:hidden;isolation:isolate;
+  animation:rise .75s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i,0) * 90ms + .25s)}
+.icon::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(13,30,47,.42),rgba(13,30,47,0));transform:scaleX(0);transform-origin:left;transition:transform .35s;z-index:-1}
+.icon:hover::before,.icon:focus-visible::before{transform:scaleX(1)}
+.icon svg{width:44px;height:44px;flex:none}
+.icon span{opacity:1!important;transform:none!important;font-size:13.5px;font-weight:500;letter-spacing:.05em;transition:letter-spacing .35s,color .3s}
+.icon:hover span{letter-spacing:.11em;color:var(--x-gold)}
+html[lang=ar] .icon span{text-align:start!important;letter-spacing:0}
+@keyframes rise{from{opacity:0;translate:0 34px}to{opacity:1;translate:0 0}}
+.peek{position:fixed;z-index:35;left:0;top:0;width:250px;pointer-events:none;opacity:0;transform:translate(-50%,-50%) scale(.85) rotate(-3deg);
+  transition:opacity .22s,transform .3s;background:var(--x-ink);color:var(--x-ice);padding:8px;border:1px solid rgba(230,243,248,.45);box-shadow:0 18px 40px rgba(0,0,0,.35)}
+.peek.on{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(-3deg)}
+.pk-tag{position:absolute;top:-10px;right:-10px;font-family:var(--mono);font-size:10px;background:var(--x-pink);color:var(--x-ink);padding:3px 7px;letter-spacing:.1em}
+html[lang=ar] .pk-tag{font-family:var(--font-ar);letter-spacing:0;font-size:12px}
+.pk-shots{display:grid;grid-template-columns:2fr 1fr;grid-template-rows:1fr 1fr;gap:4px;height:130px}
+.pk-shots img{width:100%;height:100%;object-fit:cover}
+.pk-shots img:first-child{grid-row:1/3}
+.pk-cap{font-family:var(--mono);font-size:10px;letter-spacing:.14em;margin-top:6px;color:var(--x-sky)}
+html[lang=ar] .pk-cap{font-family:var(--font-ar);letter-spacing:0;font-size:12px}
+.pk-paper{background:#F4F1E8;color:var(--x-ink);padding:14px;height:130px;display:flex;flex-direction:column;gap:9px;position:relative}
+.pk-paper b{font-size:13px}
+.pk-paper i{display:block;height:2px;background:rgba(13,30,47,.18)}
+.pk-paper i:nth-child(3){width:80%}.pk-paper i:nth-child(5){width:60%}
+.pk-paper.lock{filter:blur(.4px)}
+.pk-paper em{position:absolute;right:10px;bottom:8px;font-style:normal;font-size:11px;background:var(--x-ink);color:var(--x-ice);padding:3px 7px}
+.pk-sticky{background:var(--x-gold);color:var(--x-ink);height:130px;display:grid;place-items:center;transform:rotate(2deg);font-size:15px;font-weight:600}
+.pk-sudoku{display:grid;grid-template-columns:repeat(9,1fr);background:#F4F1E8;color:var(--x-ink);font-family:var(--mono);font-size:10px;aspect-ratio:1;max-height:200px;margin:auto}
+.pk-sudoku span{display:grid;place-items:center;border:.5px solid rgba(13,30,47,.18)}
+.pk-sudoku span:nth-child(3n){border-right:1.5px solid var(--x-ink)}
+.pk-sudoku span:nth-child(n+19):nth-child(-n+27),.pk-sudoku span:nth-child(n+46):nth-child(-n+54){border-bottom:1.5px solid var(--x-ink)}
+.pk-code{margin:0;font-family:var(--mono);font-size:11px;line-height:1.6;color:var(--x-sky);background:#08131f;padding:12px;white-space:pre;direction:ltr;text-align:left}
+.pk-mail{height:110px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.pk-mail span{font-size:34px;color:var(--x-pink)}
+.pk-mail p{font-family:var(--mono);font-size:11px}
+
+/* ---------- each window has its own faint drawing ---------- */
+.win-mood{position:absolute;right:-30px;bottom:-30px;width:min(52%,420px);pointer-events:none;color:var(--ink);opacity:.06;z-index:0}
+.win-mood svg{width:100%;height:auto}
+.win-bar,.win-body{position:relative;z-index:1}
+:root[data-mode=night] .win-mood{color:#ECEFE8;opacity:.07}
+
+/* ---------- phones ---------- */
+@media (max-width:900px){
+  .intro{width:auto;flex-wrap:wrap}
+  .id-card{flex-basis:min(340px,100%);order:2}
+  .icons{grid-template-columns:1fr 1fr!important;gap:4px 10px}
+  .icon{padding:8px}
+}
+@media (max-width:640px){
+  .ribbon{padding-inline:10px 26px;gap:5px}
+  .rb-port{display:none}
+  .icons{grid-template-columns:1fr!important}
+  .intro-name{font-size:30px}
+}
+@media (prefers-reduced-motion:reduce){
+  .icon{animation:none}
+  body::after{animation:none}
+}
+
+/* ---------- an app opened inside the main page: only its window, over the main page's background ---------- */
+html.solo,html.solo body{background:transparent!important}
+html.solo body::before,html.solo body::after{display:none!important}
+html.solo #home,html.solo #login,html.solo .saver,html.solo .ink,html.solo .toast,html.solo .grain,html.solo .peek{display:none!important}
+html.solo .layer{background:transparent;-webkit-backdrop-filter:none;backdrop-filter:none;padding:64px 24px 24px}
+html.solo .win{box-shadow:0 30px 80px rgba(0,0,0,.5)}
+html.solo .win-bar .lights{visibility:hidden}
+@media (max-width:860px){
+  html.solo .layer{padding:62px 0 0;place-items:stretch}
+  html.solo .win{width:100%!important;height:100%;max-height:none;border-radius:16px 16px 0 0}
+  html.solo .win-bar{justify-content:center;padding-inline:16px}
+  html.solo .win-body{padding:14px;-webkit-overflow-scrolling:touch}
+}

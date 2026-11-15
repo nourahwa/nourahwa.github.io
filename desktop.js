@@ -4,6 +4,9 @@
   var C = window.CORE, A = window.ART, D = window.DESK, S = C.S, el = C.el, $ = function (id) { return document.getElementById(id); };
   var T = function (en, ar) { return C.lang() === "ar" ? ar : en; };
   var TZ = "Asia/Riyadh";
+  /* opened inside the main page (index.html#app/...): only the app window shows, over the main page's background */
+  var SOLO = (function () { try { return new URLSearchParams(location.search).get("solo") === "1" && window.parent !== window; } catch (e) { return false; } })();
+  if (SOLO) document.documentElement.classList.add("solo");
 
   /* ---------- backgrounds: three colours that drift, plus the folder colour that goes with them ---------- */
   var PALETTES = [
@@ -47,7 +50,7 @@
   }
   try { if (localStorage.getItem("desk-mode") === "night") document.documentElement.dataset.mode = "night"; } catch (e) { /* day */ }
   (function () {
-    var saved = "garden"; try { saved = localStorage.getItem("desk-palette") || "garden"; } catch (e) { /* default */ }
+    var saved = "hills"; try { saved = localStorage.getItem("desk-palette") || "hills"; } catch (e) { /* default */ }
     palIndex = Math.max(0, PALETTES.map(function (p) { return p.id; }).indexOf(saved));
   })();
 
@@ -94,11 +97,6 @@
     var t = parts(), date = fmt({ weekday: "short", day: "numeric", month: "short" });
     $("mbTime").textContent = t.time + " " + t.ampm;
     $("mbDate").textContent = date;
-    if (!$("login").hidden) {
-      $("loginTime").textContent = t.time;
-      $("loginAmPm").textContent = t.ampm;
-      $("loginDate").textContent = date;
-    }
   }
   setInterval(tick, 15000);
   var WX = { 0: ["☀", "Clear", "صافٍ"], 1: ["🌤", "Mostly clear", "صافٍ غالبًا"], 2: ["⛅", "Partly cloudy", "غائم جزئيًا"], 3: ["☁", "Cloudy", "غائم"], 45: ["🌫", "Fog", "ضباب"], 61: ["🌧", "Rain", "مطر"], 80: ["🌦", "Showers", "زخات"], 95: ["⛈", "Storm", "عاصفة"] };
@@ -122,14 +120,13 @@
     } catch (e) { /* stays hidden */ }
   })();
 
-  /* ---------- login screen: no password, one click ---------- */
+  /* ---------- loading screen: lines run, the counter reaches 100%, then the screen opens ---------- */
   function lockScreen() {
     closeApp(true);
     var L = $("login");
     L.classList.remove("out"); L.hidden = false;
-    tick();
-    sunrise();
-    $("loginGo").focus();
+    window.FX.loader(L, C.lang(), enter);
+    L.focus({ preventScroll: true });
   }
 
   /* ---------- data sunrise: a thin translucent half sun rises from a line in the middle,
@@ -175,7 +172,7 @@
   function idle() {
     clearTimeout(idleTimer);
     if (!$("saver").hidden) stopSaver();
-    idleTimer = setTimeout(startSaver, 30000);
+    if (!SOLO) idleTimer = setTimeout(startSaver, 30000);
   }
   ["pointermove", "pointerdown", "keydown", "wheel", "touchstart"].forEach(function (k) { window.addEventListener(k, idle, { passive: true }); });
   /* the screensaver types one short piece of Python, presses Run and shows what it makes:
@@ -278,10 +275,21 @@
     if (L.hidden || L.classList.contains("out")) return;
     try { sessionStorage.setItem("desk-in", "1"); } catch (e) { /* shows again next time */ }
     L.classList.add("out");
-    setTimeout(function () { L.hidden = true; }, 450);
+    setTimeout(function () { L.hidden = true; L.classList.remove("out", "fast"); }, 1350);
+    playIntro();
   }
-  $("loginGo").addEventListener("click", enter);
-  $("login").addEventListener("keydown", function (e) { if (e.key === "Enter") enter(); });
+  /* a click or Enter skips the counter */
+  function skip() { var L = $("login"); if (L._finish) L._finish(); else enter(); }
+  $("login").addEventListener("click", skip);
+  $("login").addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") skip(); });
+
+  /* my intro writes itself: code first, then the words */
+  function playIntro() {
+    var PR = window.DESK_PROFILE, X = window.FX;
+    X.decode($("introHello"), T("· Hello, I'm", "· مرحبًا، أنا"), { dur: 500 });
+    X.decode($("introBio"), PR ? C.tr(PR.line) : C.tr(S.bio), { delay: 250 });
+    if (PR) X.decode($("introAbout"), C.tr(PR.bio), { delay: 700 });
+  }
 
   /* night mode darkens the windows and the bars; the desktop background stays as it is */
   function setMode(night, announce) {
@@ -424,6 +432,10 @@
     current = name; back = document.activeElement;
     var win = $("win");
     win.className = "win";
+    $("peek").classList.remove("on");
+    /* each window has its own faint drawing behind it */
+    win.querySelectorAll(".win-mood").forEach(function (m) { m.remove(); });
+    var mood = el("div", "win-mood"); mood.setAttribute("aria-hidden", "true"); mood.innerHTML = window.FX.mood(name); win.appendChild(mood);
     $("winBody").innerHTML = ""; $("winTools").innerHTML = "";
     $("winClose").setAttribute("aria-label", T("Close", "إغلاق"));
     var api = {
@@ -450,7 +462,11 @@
     $("winBody").innerHTML = "";
     if (!quiet && back && back.focus) back.focus();
   }
+  /* a folder opened from the main page (desktop.html?open=sudoku) goes back there when it closes */
+  var OPENED = (function () { try { return new URLSearchParams(location.search).get("open") || ""; } catch (e) { return ""; } })();
   function shut() {
+    if (SOLO && current === OPENED) { window.parent.postMessage("close-app", location.origin); return; }
+    if (OPENED && current === OPENED) { location.href = "index.html#desk"; return; }
     if (/^#(about|projects)$/.test(location.hash)) location.hash = "";
     else closeApp();
   }
@@ -532,6 +548,22 @@
   }
   window.addEventListener("resize", placeIcons);
 
+  /* a small sample of what is inside, next to the pointer */
+  var peekBox = $("peek"), px = 0, py = 0, ptx = 0, pty = 0, praf = 0;
+  function peekLoop() { px += (ptx - px) * 0.2; py += (pty - py) * 0.2; peekBox.style.left = px + "px"; peekBox.style.top = py + "px"; praf = Math.abs(ptx - px) + Math.abs(pty - py) > 0.5 ? requestAnimationFrame(peekLoop) : 0; }
+  function peekAt(e) { ptx = Math.max(130, e.clientX - 150); pty = Math.max(115, Math.min(window.innerHeight - 115, e.clientY)); }
+  function peekOn(b, app) {
+    b.addEventListener("pointerenter", function (e) {
+      if (e.pointerType !== "mouse" || b.classList.contains("dragging")) return;
+      var html = window.FX.sample(app, C.lang()); if (!html) return;
+      peekBox.innerHTML = html + '<span class="pk-tag">' + T(ICONS.filter(function (x) { return x[0] === app; })[0][2], ICONS.filter(function (x) { return x[0] === app; })[0][3]) + "</span>";
+      peekAt(e); px = ptx; py = pty; peekBox.style.left = px + "px"; peekBox.style.top = py + "px";
+      peekBox.classList.add("on");
+    });
+    b.addEventListener("pointermove", function (e) { if (e.pointerType !== "mouse") return; if (b.classList.contains("dragging")) { peekBox.classList.remove("on"); return; } peekAt(e); if (!praf) praf = requestAnimationFrame(peekLoop); });
+    ["pointerleave", "pointerdown"].forEach(function (k) { b.addEventListener(k, function () { peekBox.classList.remove("on"); }); });
+  }
+
   /* ---------- desktop ---------- */
   var ICONS = [
     ["projects", function () { return A.folder(false); }, "Projects", "المشاريع"],
@@ -568,26 +600,29 @@
     pal.appendChild(el("span", "pal-hint", T("← swipe", "← اسحب")));
     apply(palIndex);
 
-    ["avatar", "loginAvatar"].forEach(function (id) { $(id).innerHTML = A.avatar(); });
+    var ar = C.lang() === "ar";
+    $("rbPort").textContent = T("[·Portfolio·]", "[·ملف أعمال·]");
     /* the language changes, the layout does not flip */
     document.documentElement.dir = "ltr";
     $("helpBtn").textContent = T("Help", "مساعدة");
     soundIcon();
-    $("loginName").textContent = (window.DESK_NAME ? window.DESK_NAME() : S.name);
-    $("loginGo").textContent = T("Enter →", "دخول ←");
-    $("loginHint").textContent = T("No password. Click to enter.", "دون كلمة مرور، اضغط للدخول.");
     $("introName").textContent = (window.DESK_NAME ? window.DESK_NAME() : S.name);
     var PR = window.DESK_PROFILE;
     $("introRole").textContent = PR ? (C.lang() === "ar" ? PR.role.ar : PR.role.en.toUpperCase()) : T("DATA ANALYST", "محللة بيانات");
+    $("introHello").textContent = T("· Hello, I'm", "· مرحبًا، أنا");
     $("introBio").textContent = PR ? C.tr(PR.line) : C.tr(S.bio);
+    $("introAbout").textContent = PR ? C.tr(PR.bio) : "";
+    if ($("login").hidden) playIntro();
     $("termBtn").setAttribute("aria-label", T("Open about_me.py", "افتح about_me.py")); $("termBtn").title = "about_me.py";
     $("cpClose").setAttribute("aria-label", T("Close", "إغلاق"));
     $("cpRun").textContent = T("Run ▶", "تشغيل ▶");
     if (!$("codePanel").hidden) panel.play();
 
     var icons = $("icons"); icons.innerHTML = "";
-    ICONS.forEach(function (x) {
+    ICONS.forEach(function (x, idx) {
       var b = el("button", "icon"); b.type = "button"; b.dataset.app = x[0];
+      b.style.setProperty("--i", idx);
+      peekOn(b, x[0]);
       b.innerHTML = x[1]();
       b.appendChild(el("span", "", T(x[2], x[3])));
       b.addEventListener("click", function (e) { if (b.dataset.moved) { delete b.dataset.moved; e.preventDefault(); return; } openApp(x[0]); });
@@ -618,8 +653,9 @@
     }
   });
 
-  /* first visit in this session starts at the login screen */
+  /* first visit in this session starts at the login screen; a folder opened from the main page opens at once */
   (function () {
+    if (OPENED && D.apps[OPENED]) { try { sessionStorage.setItem("desk-in", "1"); } catch (e) { /* fine */ } openApp(OPENED); return; }
     var seen = false; try { seen = sessionStorage.getItem("desk-in") === "1"; } catch (e) { seen = true; }
     if (!seen && location.hash.indexOf("#project/") !== 0) lockScreen();
   })();

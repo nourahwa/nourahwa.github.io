@@ -7,17 +7,17 @@ window.DESK_PROFILE = {
   /* how my name shows in each language */
   name: { en: "NOURAH WA", ar: "نورة" },
 
-  role: { en: "Data Analyst · Digital Designer", ar: "محللة بيانات · مصممة رقمية" },
+  role: { en: "Data & Business Analyst", ar: "محللة بيانات وأعمال" },
 
   /* the one sentence under my name on the desktop */
   line: {
-    en: "I care about two things: that the numbers are right, and that they are understood.",
-    ar: "يهمني أمران: أن تكون الأرقام صحيحة، وأن تكون مفهومة."
+    en: "Tools: SQL, Python, Excel, Power BI and Tableau. Open to data analyst and business analyst roles in Saudi Arabia.",
+    ar: "أدواتي: SQL وPython وExcel وPower BI وTableau. متاحة لوظائف محللة بيانات ومحللة أعمال في السعودية."
   },
 
   bio: {
-    en: "I analyse data to find what matters, and design the way it is seen. My work joins the two: careful analysis, clear dashboards, and digital interfaces people can use without a manual.",
-    ar: "أحلل البيانات لأصل إلى ما يهم، وأصمم الطريقة التي يُرى بها. يجمع عملي بين الاثنين: تحليل دقيق، ولوحات واضحة، وواجهات رقمية يستخدمها الناس دون شرح."
+    en: "Data analyst and business analyst with a background in mathematics and project management. I turn raw data into clear answers for business decisions: I clean and check the data, analyse it with SQL and Python, and build dashboards people can use.",
+    ar: "محللة بيانات وأعمال، خلفيتي في الرياضيات وإدارة المشاريع. أحوّل البيانات الخام إلى إجابات واضحة تساعد في اتخاذ القرار: أنظّف البيانات وأتحقق منها، وأحللها بـ SQL وPython، وأبني لوحات يسهل على الناس استخدامها."
   },
 
   /* used inside about_me.py */

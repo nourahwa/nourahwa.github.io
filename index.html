@@ -2,108 +2,154 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://gc.zgo.at; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://raw.githubusercontent.com https://*.githubusercontent.com https://github.com; media-src 'self' blob:; connect-src 'self' https://formsubmit.co https://api.open-meteo.com https://*.goatcounter.com https://*.supabase.co https://api.github.com; object-src 'none'; base-uri 'self'; form-action 'self' https://formsubmit.co; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://formsubmit.co https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self' https://formsubmit.co">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0D1E2F">
 <title>Nourah WA | Data Analyst</title>
 <meta name="description" content="Data analysis portfolio">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@300&family=Inter:wght@200;300;400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600&display=swap">
-<link rel="stylesheet" href="shared/base.css?v=202611121428">
-<link rel="stylesheet" href="desktop.css?v=202611121428">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300;400;500;600;700;800&family=Readex+Pro:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="site.css?v=14">
 </head>
 <body>
 
-<div class="login" id="login" hidden>
-  <div class="login-clock">
-    <p class="login-date" id="loginDate"></p>
-    <p class="login-time"><span id="loginTime"></span><small id="loginAmPm"></small></p>
+<!-- loading screen: running lines, a counter, then the two halves open -->
+<div class="loader" id="loader" tabindex="-1" aria-hidden="true">
+  <div class="ld-half ld-top"></div>
+  <div class="ld-half ld-bottom"></div>
+  <div class="ld-lines"></div>
+  <div class="ld-center">
+    <p class="ld-word"></p>
+    <p class="ld-pct">[ · 0% · ]</p>
   </div>
-  <canvas class="sunrise" id="sunrise" aria-hidden="true"></canvas>
-  <div class="login-user">
-    <div class="avatar big" id="loginAvatar"></div>
-    <p class="login-name" id="loginName"></p>
-    <button class="login-go" id="loginGo" type="button"></button>
-    <p class="login-hint" id="loginHint"></p>
-  </div>
+  <div class="ld-stream"></div>
+  <p class="ld-skip"></p>
 </div>
 
-<main id="home" class="desk">
-  <header class="menubar">
-    <div class="mb-left">
-      <button class="sun-btn" id="sunBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="sunMenu"></button>
-      <button class="mb-name" id="mbName" type="button"></button>
-      <button class="mb-icon mb-term" id="termBtn" type="button" aria-expanded="false" aria-controls="codePanel">&gt;_</button>
-      <button class="mb-text" id="helpBtn" type="button"></button>
-      <div class="sun-menu" id="sunMenu" hidden></div>
-    </div>
-    <div class="mb-right">
-      <button class="mb-item mb-prog" id="progBtn" type="button" aria-haspopup="true" aria-expanded="false"></button>
-      <div class="prog-menu" id="progMenu" hidden></div>
-      <span class="mb-item" id="weather" hidden></span>
-      <span class="mb-item" id="mbDate"></span>
-      <span class="mb-item" id="mbTime"></span>
-      <button class="mb-icon" id="soundBtn" type="button"></button>
-      <span id="langSlot"></span>
-    </div>
-  </header>
+<!-- top ribbon: sun mark, Portfolio and my name -->
+<header class="top" id="top">
+  <a class="ribbon" href="#about">
+    <span class="rb-sun" id="rbSun"></span>
+    <span class="rb-port" data-t="portTag">[·Portfolio·]</span>
+    <span class="rb-name" id="rbName">NOURAH WA</span>
+  </a>
+  <span class="top-dash" aria-hidden="true"></span>
+  <span class="clock" id="clock"></span>
+  <nav class="top-nav" id="topNav">
+    <a href="#about" data-t="about">About</a>
+    <a href="#work" data-t="projects">Projects</a>
+    <a href="#desk" data-t="desk">Folders</a>
+    <a href="#cv" data-t="cv">CV</a>
+    <a href="#contact" data-t="contact">Contact</a>
+  </nav>
+  <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="topNav"><i></i><i></i><i></i></button>
+  <button class="lang" id="lang" type="button">ع</button>
+</header>
 
-  <aside class="palette" id="palette" aria-label="Background"></aside>
+<!-- slow lines running behind the whole page -->
+<div class="drift" aria-hidden="true"><i class="ld-line" style="top:14%;color:#88C9E2;--d:60px;--g:40px;--s:22s"></i><i class="ld-line rev" style="top:38%;color:#E2AFB1;--d:20px;--g:70px;--s:30s"></i><i class="ld-line thick" style="top:63%;color:#E6F3F8;--d:90px;--g:120px;--s:26s"></i><i class="ld-line rev" style="top:86%;color:#88C9E2;--d:30px;--g:50px;--s:34s"></i><b></b><b></b><b></b></div>
 
-  <section class="intro">
-    <div class="avatar" id="avatar"></div>
-    <div class="intro-text">
-      <p class="intro-name" id="introName"></p>
-      <p class="intro-role" id="introRole"></p>
-      <p class="intro-bio" id="introBio"></p>
+<main id="page">
+
+  <section class="sec" id="about" data-mood="about">
+    <div class="mood" aria-hidden="true"></div>
+    <div class="tag-label"><span>[·<b data-t="about">About</b>·]</span></div>
+    <div class="about-grid">
+      <div class="about-text">
+        <p class="hello" id="hello"></p>
+        <h1 class="name" id="name">Nourah<br>WA·</h1>
+        <p class="role" id="role"></p>
+        <p class="bio" id="bio"></p>
+        <p class="motto" id="motto"></p>
+      </div>
+      <div class="badge" id="badge" aria-hidden="true"></div>
+      <p class="scroll-hint"><span data-t="explore">[ · Drag or pick to explore · ]</span><i aria-hidden="true">→</i></p>
+    </div>
+    <div class="band" id="band" aria-hidden="true"></div>
+  </section>
+
+  <section class="sec" id="work" data-mood="projects">
+    <div class="mood" aria-hidden="true"></div>
+    <div class="tag-label"><span>[·<b data-t="projects">Projects</b>·]</span></div>
+    <div class="head">
+      <h2 class="big-title">[·<span data-t="projectsBig">projects</span>·]</h2>
+      <p class="note" id="workNote"></p>
+      <div class="filters" id="filters" role="group" aria-label="Project type"></div>
+    </div>
+    <ol class="folders" id="projectList"></ol>
+  </section>
+
+  <section class="sec" id="desk" data-mood="lab">
+    <div class="mood" aria-hidden="true"></div>
+    <div class="tag-label"><span>[·<b data-t="desk">Folders</b>·]</span></div>
+    <div class="head">
+      <h2 class="big-title">[·<span data-t="deskBig">folders</span>·]</h2>
+      <p class="note" id="deskNote"></p>
+    </div>
+    <ol class="folders" id="deskList"></ol>
+    <div class="tools-wrap">
+      <p class="tools-title">[·<span data-t="tools">tools I use</span>·]</p>
+      <div class="tools" id="tools"></div>
     </div>
   </section>
 
-  <aside class="codepanel" id="codePanel" hidden aria-label="about_me.py">
-    <header class="cp-bar">
-      <span class="lights"><button class="win-close" id="cpClose" type="button"></button><i></i><i></i></span>
-      <span class="cp-file">about_me.py</span>
-      <button class="cp-run" id="cpRun" type="button">Run ▶</button>
-    </header>
-    <pre class="me-code" id="cpCode"></pre>
-    <div class="me-term" id="cpTerm"></div>
-  </aside>
+  <section class="sec" id="cv" data-mood="resume">
+    <div class="mood" aria-hidden="true"></div>
+    <div class="tag-label"><span>[·<b data-t="cv">CV</b>·]</span></div>
+    <div class="cv-box">
+      <h2 class="big-title small">[·<span data-t="cvBig">cv on request</span>·]</h2>
+      <p class="note" id="cvLead"></p>
+      <form class="cv-form" id="cvForm" novalidate>
+        <label><span data-t="yourName">Your name</span><input id="cvName" maxlength="60" autocomplete="name"></label>
+        <label><span data-t="yourMail">Your email</span><input id="cvMail" type="email" maxlength="120" autocomplete="email"></label>
+        <label><span data-t="yourRole">Your job title</span><input id="cvRole" maxlength="80" autocomplete="organization-title"></label>
+        <input class="hp" id="cvHp" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button class="btn" type="submit" id="cvSend" data-t="request">[ · Request my CV · ]</button>
+        <p class="cv-info" id="cvInfo" role="status"></p>
+      </form>
+    </div>
+  </section>
 
-  <nav class="icons" id="icons" aria-label="Apps"></nav>
+  <section class="sec" id="contact" data-mood="contact">
+    <div class="mood" aria-hidden="true"></div>
+    <div class="tag-label"><span>[·<b data-t="contact">Contact</b>·]</span></div>
+    <div class="head">
+      <h2 class="big-title">[·<span data-t="say">say hello</span>·]</h2>
+      <p class="note" id="contactNote"></p>
+    </div>
+    <ul class="links" id="links"></ul>
+    <footer class="foot">
+      <span id="copy"></span>
+      <a href="desktop.html" data-t="desktop">Desktop version</a>
+    </footer>
+  </section>
 
-  <footer class="dock-wrap">
-    <div class="dock" id="dock"></div>
-    <p class="copy" id="copy"></p>
-  </footer>
-  <p class="toast" id="toast" role="status" hidden></p>
 </main>
 
-<div class="ink" id="ink" hidden aria-hidden="true"></div>
-<div class="saver" id="saver" hidden aria-hidden="true"></div>
+<article class="project" id="project" hidden role="dialog" aria-modal="true" aria-labelledby="pjTitle">
+  <div class="pj-mood" id="pjMood" aria-hidden="true"></div>
+  <div class="pj-wrap" id="pjWrap"></div>
+</article>
 
-<div class="layer" id="layer" hidden>
-  <section class="win" id="win" role="dialog" aria-modal="true" aria-labelledby="winTitle">
-    <header class="win-bar">
-      <span class="lights"><button class="win-close" id="winClose" type="button"></button><i></i><i></i></span>
-      <h2 class="win-title" id="winTitle"></h2>
-      <span class="win-tools" id="winTools"></span>
-    </header>
-    <div class="win-body" id="winBody"></div>
-  </section>
+<div class="app-sheet" id="appSheet" hidden role="dialog" aria-modal="true">
+  <button class="app-close" id="appClose" type="button"><span aria-hidden="true">✕</span></button>
+  <iframe id="appFrame" title="App"></iframe>
+  <div class="studio" id="studio" hidden><div class="studio-body" id="studioBody"></div></div>
 </div>
 
-<article id="detail" class="detail" hidden></article>
+<div class="peek" id="peek" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
 
 <script src="site/content/settings.js?v=202611121428"></script>
-<script src="site/content/projects.js?v=202611121428"></script>
-<script src="shared/pixel.js?v=202611121428"></script>
-<script src="shared/core.js?v=202611121428"></script>
+<script src="site/content/projects.js?v=4"></script>
+<script src="profile.js?v=4"></script>
 <script src="config.js?v=202611121428"></script>
-<script src="profile.js?v=202611121428"></script>
-<script src="sqldata.js?v=202611121428"></script>
 <script src="art.js?v=202611121428"></script>
-<script src="apps.js?v=202611121428"></script>
-<script src="apps2.js?v=202611121428"></script>
-<script src="desktop.js?v=202611121428"></script>
+<script src="art2.js?v=3"></script>
+<script src="sqldata.js?v=202611121428"></script>
+<script src="studio.js?v=5"></script>
+<script src="site.js?v=13"></script>
 </body>
 </html>

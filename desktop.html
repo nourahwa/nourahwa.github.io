@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://gc.zgo.at; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://raw.githubusercontent.com https://*.githubusercontent.com https://github.com; media-src 'self' blob:; connect-src 'self' https://formsubmit.co https://api.open-meteo.com https://*.goatcounter.com https://*.supabase.co https://api.github.com; object-src 'none'; base-uri 'self'; form-action 'self' https://formsubmit.co">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nourah WA | Data Analyst</title>
+<meta name="description" content="Data analysis portfolio">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300;400;500;600;700;800&family=Readex+Pro:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="shared/base.css?v=202611121428">
+<link rel="stylesheet" href="desktop.css?v=202611121428">
+<link rel="stylesheet" href="extras.css?v=2">
+</head>
+<body>
+
+<!-- loading screen: running lines and a counter, then the screen opens in two halves -->
+<div class="loader" id="login" hidden tabindex="-1" aria-label="Loading">
+  <div class="ld-half ld-top"></div>
+  <div class="ld-half ld-bottom"></div>
+  <div class="ld-lines"></div>
+  <div class="ld-center">
+    <p class="ld-word"></p>
+    <p class="ld-pct">[ · 0% · ]</p>
+  </div>
+  <div class="ld-stream"></div>
+  <p class="ld-skip"></p>
+</div>
+
+<main id="home" class="desk">
+  <header class="menubar">
+    <div class="mb-left">
+      <div class="ribbon">
+        <button class="sun-btn" id="sunBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="sunMenu"></button>
+        <span class="rb-port" id="rbPort">[·Portfolio·]</span>
+        <button class="mb-name" id="mbName" type="button"></button>
+      </div>
+      <button class="mb-icon mb-term" id="termBtn" type="button" aria-expanded="false" aria-controls="codePanel">&gt;_</button>
+      <button class="mb-text" id="helpBtn" type="button"></button>
+      <div class="sun-menu" id="sunMenu" hidden></div>
+    </div>
+    <div class="mb-right">
+      <button class="mb-item mb-prog" id="progBtn" type="button" aria-haspopup="true" aria-expanded="false"></button>
+      <div class="prog-menu" id="progMenu" hidden></div>
+      <span class="mb-item" id="weather" hidden></span>
+      <span class="mb-item" id="mbDate"></span>
+      <span class="mb-item" id="mbTime"></span>
+      <button class="mb-icon" id="soundBtn" type="button"></button>
+      <span id="langSlot"></span>
+    </div>
+  </header>
+
+  <aside class="palette" id="palette" aria-label="Background"></aside>
+
+  <section class="intro">
+    <div class="intro-text">
+      <p class="intro-hello" id="introHello"></p>
+      <p class="intro-name" id="introName"></p>
+      <p class="intro-role" id="introRole"></p>
+      <p class="intro-bio" id="introBio"></p>
+      <p class="intro-about" id="introAbout"></p>
+    </div>
+  </section>
+
+  <aside class="codepanel" id="codePanel" hidden aria-label="about_me.py">
+    <header class="cp-bar">
+      <span class="lights"><button class="win-close" id="cpClose" type="button"></button><i></i><i></i></span>
+      <span class="cp-file">about_me.py</span>
+      <button class="cp-run" id="cpRun" type="button">Run ▶</button>
+    </header>
+    <pre class="me-code" id="cpCode"></pre>
+    <div class="me-term" id="cpTerm"></div>
+  </aside>
+
+  <nav class="icons" id="icons" aria-label="Apps"></nav>
+
+  <footer class="dock-wrap">
+    <div class="dock" id="dock"></div>
+    <p class="copy" id="copy"></p>
+  </footer>
+  <p class="toast" id="toast" role="status" hidden></p>
+</main>
+
+<div class="ink" id="ink" hidden aria-hidden="true"></div>
+<div class="peek" id="peek" aria-hidden="true"></div>
+<div class="saver" id="saver" hidden aria-hidden="true"></div>
+
+<div class="layer" id="layer" hidden>
+  <section class="win" id="win" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+    <header class="win-bar">
+      <span class="lights"><button class="win-close" id="winClose" type="button"></button><i></i><i></i></span>
+      <h2 class="win-title" id="winTitle"></h2>
+      <span class="win-tools" id="winTools"></span>
+    </header>
+    <div class="win-body" id="winBody"></div>
+  </section>
+</div>
+
+<article id="detail" class="detail" hidden></article>
+
+<script src="site/content/settings.js?v=202611121428"></script>
+<script src="site/content/projects.js?v=202611121428"></script>
+<script src="shared/pixel.js?v=202611121428"></script>
+<script src="shared/core.js?v=202611121428"></script>
+<script src="config.js?v=202611121428"></script>
+<script src="profile.js?v=202611121428"></script>
+<script src="sqldata.js?v=202611121428"></script>
+<script src="art.js?v=202611121428"></script>
+<script src="art2.js?v=3"></script>
+<script src="apps.js?v=202611121428"></script>
+<script src="apps2.js?v=202611121428"></script>
+<script src="desktop.js?v=3"></script>
+</body>
+</html>
