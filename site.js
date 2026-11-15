@@ -484,41 +484,62 @@
     window.addEventListener("resize", frame); frame();
   })();
 
-  /* ---------- Folders only: the mouse leaves soft green colour that spreads and is dragged along ---------- */
+  /* ---------- Folders only: the mouse (or a finger) leaves soft green colour that spreads and is dragged along.
+     On phones, where there is no mouse, a slow trail also wanders through the section while it is on screen. ---------- */
   (function ink() {
     var sec = $("desk");
-    if (!sec || !window.matchMedia("(hover: hover) and (pointer: fine)").matches || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!sec || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var touch = !window.matchMedia("(hover: hover) and (pointer: fine)").matches;
     var cv = document.createElement("canvas"); cv.className = "ink"; cv.setAttribute("aria-hidden", "true"); sec.insertBefore(cv, sec.firstChild);
-    var ctx = cv.getContext("2d"), dots = [], run = 0, last = null, dpr = Math.min(2, window.devicePixelRatio || 1);
+    var ctx = cv.getContext("2d"), dots = [], run = 0, last = null, dpr = Math.min(touch ? 1.5 : 2, window.devicePixelRatio || 1);
     var COLS = [[175, 226, 196], [120, 196, 160], [175, 226, 196], [136, 201, 226]];
-    function size() { cv.width = sec.clientWidth * dpr; cv.height = sec.scrollHeight * dpr; cv.style.height = sec.scrollHeight + "px"; }
+    function size() { cv.width = Math.floor(sec.clientWidth * dpr); cv.height = Math.floor(sec.scrollHeight * dpr); cv.style.height = sec.scrollHeight + "px"; }
     size(); window.addEventListener("resize", size);
-    sec.addEventListener("pointermove", function (e) {
-      if (e.pointerType !== "mouse") return;
-      var r = sec.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
-      if (cv.height !== Math.round(sec.scrollHeight * dpr)) size();
+    function add(x, y, k) {
+      if (Math.abs(cv.height - sec.scrollHeight * dpr) > 4) size();
+      k = k || 1;
       if (last) {
         var dx = x - last.x, dy = y - last.y, d = Math.min(120, Math.hypot(dx, dy)), steps = Math.max(1, Math.round(d / 9));
         for (var i = 0; i < steps; i++) {
           var t = i / steps;
-          dots.push({ x: last.x + dx * t, y: last.y + dy * t, vx: dx * 0.06 + (Math.random() - 0.5) * 1.6, vy: dy * 0.06 + (Math.random() - 0.5) * 1.6,
-            r: 10 + Math.random() * 18 + d * 0.25, life: 1, c: COLS[(Math.random() * COLS.length) | 0] });
+          dots.push({ x: last.x + dx * t, y: last.y + dy * t, vx: dx * 0.06 + (Math.random() - 0.5) * 1.6 * k, vy: dy * 0.06 + (Math.random() - 0.5) * 1.6 * k,
+            r: (10 + Math.random() * 18 + d * 0.25) * k, life: 1, c: COLS[(Math.random() * COLS.length) | 0] });
         }
         if (dots.length > 260) dots.splice(0, dots.length - 260);
       }
       last = { x: x, y: y };
       if (!run) run = requestAnimationFrame(draw);
-    });
-    sec.addEventListener("pointerleave", function () { last = null; });
+    }
+    function at(cx, cy) { var r = sec.getBoundingClientRect(); return [cx - r.left, cy - r.top]; }
+    sec.addEventListener("pointermove", function (e) { if (e.pointerType !== "mouse") return; var p = at(e.clientX, e.clientY); add(p[0], p[1]); });
+    sec.addEventListener("pointerleave", function (e) { if (e.pointerType === "mouse") last = null; });
+    /* a finger: touchmove keeps coming while the page scrolls, so the colour follows the finger */
+    var finger = false;
+    sec.addEventListener("touchstart", function (e) { finger = true; last = null; var t = e.touches[0], p = at(t.clientX, t.clientY); add(p[0], p[1], 1.3); }, { passive: true });
+    sec.addEventListener("touchmove", function (e) { var t = e.touches[0], p = at(t.clientX, t.clientY); add(p[0], p[1], 1.3); }, { passive: true });
+    sec.addEventListener("touchend", function () { finger = false; last = null; }, { passive: true });
+    /* on phones a slow trail wanders through the part of the section on screen */
+    if (touch) {
+      var t0 = performance.now(), gl = null;
+      (function wander(now) {
+        var r = sec.getBoundingClientRect(), vis = Math.min(window.innerHeight, r.bottom) - Math.max(0, r.top);
+        if (vis < window.innerHeight * 0.25) gl = null;
+        else if (!finger) {
+          var t = (now - t0) / 1000 * 1.7, top = Math.max(0, -r.top);
+          var x = r.width * (0.5 + 0.42 * Math.sin(t * 0.9) * Math.cos(t * 0.23)), y = top + vis * (0.5 + 0.38 * Math.sin(t * 0.61 + 1.3));
+          var keep = last; last = gl; add(x, y, 2); gl = last; last = keep;
+        }
+        requestAnimationFrame(wander);
+      })(t0);
+    }
     function draw() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, cv.width, cv.height);
-      ctx.globalCompositeOperation = "source-over";
       for (var i = dots.length - 1; i >= 0; i--) {
         var p = dots[i];
         p.x += p.vx; p.y += p.vy; p.vx *= 0.94; p.vy *= 0.94; p.r *= 1.025; p.life -= 0.013;
         if (p.life <= 0) { dots.splice(i, 1); continue; }
-        var g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r), a = p.life * p.life * 0.22;
+        var g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r), a = p.life * p.life * (touch ? 0.26 : 0.22);
         g.addColorStop(0, "rgba(" + p.c[0] + "," + p.c[1] + "," + p.c[2] + "," + a + ")");
         g.addColorStop(1, "rgba(" + p.c[0] + "," + p.c[1] + "," + p.c[2] + ",0)");
         ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.2832); ctx.fill();
