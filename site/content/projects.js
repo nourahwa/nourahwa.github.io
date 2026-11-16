@@ -8,7 +8,8 @@
    Write both languages: en for English, ar for Arabic.
    github: paste the link between the quotes. While it is empty, no button shows.
 
-   type can be: data, app, design. It picks the filter button and the page layout.
+   type can be: data, business, app, design. It picks the filter button and the page layout.
+     business uses the same layout as data.
      data:   goal, insights, recommendation, dashboard (as now)
      app:    goal (what it does), screens: ["path.png", ...], video (optional),
              link: "https://..." for the "Try it" button

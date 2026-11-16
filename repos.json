@@ -80,48 +80,6 @@
       "image": "https://raw.githubusercontent.com/inourahwahaq/ev-global-sales-analysis/main/dashboard/dashboard.jpg",
       "url": "https://github.com/inourahwahaq/ev-global-sales-analysis",
       "pushed": "2026-11-09T22:44:40Z"
-    },
-    {
-      "name": "retail-sales-performance-analysis",
-      "description": "Retail Sales Performance Analysis using Python and Power BI",
-      "language": "Python",
-      "topics": [
-        "data-analysis",
-        "pandas",
-        "power-bi",
-        "python",
-        "retail"
-      ],
-      "image": "https://raw.githubusercontent.com/inourahwahaq/retail-sales-performance-analysis/main/dashboard.png",
-      "url": "https://github.com/inourahwahaq/retail-sales-performance-analysis",
-      "pushed": "2026-11-09T22:24:12Z"
-    },
-    {
-      "name": "sql-insurance-analysis",
-      "description": "SQL data analysis project exploring customer behavior and insurance response using MySQL.",
-      "language": "",
-      "topics": [
-        "data-analysis",
-        "mysql",
-        "sql"
-      ],
-      "image": "",
-      "url": "https://github.com/inourahwahaq/sql-insurance-analysis",
-      "pushed": "2026-11-09T22:08:11Z"
-    },
-    {
-      "name": "Medical-Insurance-Cost-Analysis",
-      "description": "Medical Insurance Cost Analysis using Excel Dashboard",
-      "language": "",
-      "topics": [
-        "dashboard",
-        "data-analysis",
-        "excel",
-        "pivot-tables"
-      ],
-      "image": "https://raw.githubusercontent.com/inourahwahaq/Medical-Insurance-Cost-Analysis/main/dashboard.png",
-      "url": "https://github.com/inourahwahaq/Medical-Insurance-Cost-Analysis",
-      "pushed": "2026-11-09T22:08:05Z"
     }
   ]
 }

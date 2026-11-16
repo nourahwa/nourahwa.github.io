@@ -15,7 +15,9 @@ from datetime import datetime, timezone
 from urllib.parse import urljoin
 
 USER = "inourahwahaq"
-SKIP = {USER, f"{USER}.github.io"}  # the profile and the site itself
+# the profile, the site itself, and older projects I do not show on the site
+SKIP = {USER, f"{USER}.github.io",
+        "retail-sales-performance-analysis", "sql-insurance-analysis", "Medical-Insurance-Cost-Analysis"}
 API = "https://api.github.com"
 HEADERS = {"Accept": "application/vnd.github+json", "User-Agent": "portfolio-repos"}
 if os.environ.get("GITHUB_TOKEN"):

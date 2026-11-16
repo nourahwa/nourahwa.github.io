@@ -194,12 +194,14 @@
     return a;
   }
   /* projects by type: data analysis first, then apps, then designs */
-  var TYPES = [["all", "All", "الكل"], ["data", "Data analysis", "تحليل بيانات"], ["app", "Apps", "تطبيقات"], ["design", "Design", "تصميم"]];
-  var typeOf = function (p) { return p.type === "app" || p.type === "design" ? p.type : "data"; };
+  var TYPES = [["all", "All", "الكل"], ["data", "Data analysis", "تحليل بيانات"], ["business", "Business analysis", "تحليل أعمال"], ["app", "Apps", "تطبيقات"], ["design", "Design", "تصميم"]];
+  var typeOf = function (p) { return p.type === "business" || p.type === "app" || p.type === "design" ? p.type : "data"; };
+  /* a picture is either in the site folder or a full https link (a GitHub README image) */
+  var src = function (x) { return /^https:\/\//.test(x) ? x : "site/" + x; };
   var typeName = function (k) { var t = TYPES.filter(function (x) { return x[0] === k; })[0]; return t ? T(t[1], t[2]) : ""; };
   var filter = "all";
   function sorted() {
-    var order = { data: 0, app: 1, design: 2 };
+    var order = { data: 0, business: 1, app: 2, design: 3 };
     return P.map(function (p, i) { return { p: p, i: i }; }).sort(function (a, b) { return (order[typeOf(a.p)] - order[typeOf(b.p)]) || a.i - b.i; }).map(function (x) { return x.p; });
   }
   function projects() {
@@ -222,7 +224,7 @@
       var a = row(list, i, "#p/" + p.id, (i < 9 ? "0" : "") + (i + 1), name, L(p.category) || typeName(typeOf(p)));
       a.parentNode.dataset.type = typeOf(p);
       var pic = p.thumbnail || (p.screens || p.images || [])[0];
-      hover(a, function () { return pic ? '<img alt="" src="site/' + esc(pic) + '">' : ""; }, typeName(typeOf(p)) + " · " + (p.tools || []).join(" / "));
+      hover(a, function () { return pic ? '<img alt="" src="' + esc(src(pic)) + '">' : ""; }, typeName(typeOf(p)) + " · " + (p.tools || []).join(" / "));
     });
   }
   /* working tools that show how I work: check the data, write the query, design the chart */
@@ -261,8 +263,14 @@
       '<div class="pj-tools">' + (p.tools || []).map(function (t) { return "<span>" + esc(t) + "</span>"; }).join("") +
       (p.link && typeOf(p) === "app" ? '<a class="btn pj-gh" href="' + esc(p.link) + '" target="_blank" rel="noopener">' + T("[ · Try it · ]", "[ · جرّبه · ]") + "</a>" : "") +
       (p.github ? '<a class="btn pj-gh" href="' + esc(p.github) + '" target="_blank" rel="noopener">[ · GitHub · ]</a>' : "") + "</div>";
-    var pics = function (arr, cls) { return '<div class="' + cls + '">' + (arr || []).map(function (src, k) {
-      return '<figure><img loading="lazy" src="site/' + esc(src) + '" alt="' + esc(L(p.title) + " " + (k + 1)) + '"></figure>'; }).join("") + "</div>"; };
+    var pics = function (arr, cls) { return '<div class="' + cls + '">' + (arr || []).map(function (f, k) {
+      return '<figure><img loading="lazy" src="' + esc(src(f)) + '" alt="' + esc(L(p.title) + " " + (k + 1)) + '"></figure>'; }).join("") + "</div>"; };
+    if (p.fromGithub) {
+      h += (p.thumbnail ? '<div class="pj-media"><img src="' + esc(src(p.thumbnail)) + '" alt="' + esc(L(p.title)) + '"></div>' : "") +
+        (L(p.goal) ? '<div class="pj-block"><h3>' + T("About this project", "عن المشروع") + "</h3><p>" + esc(L(p.goal)) + "</p></div>" : "") +
+        '<div class="pj-block"><p>' + T("The full write-up, code and data are on GitHub.", "التفاصيل الكاملة والكود والبيانات على GitHub.") + "</p></div>";
+      return show(h);
+    }
     if (typeOf(p) === "app") {
       h += '<div class="pj-block"><h3>' + T("What it does", "وش يسوي") + "</h3><p>" + esc(L(p.goal)) + "</p></div>" +
         (p.video ? '<div class="pj-media"><video src="site/' + esc(p.video) + '" controls playsinline muted autoplay loop></video></div>' : "") +
@@ -283,8 +291,8 @@
     var w = show(h);
     function media(kind) {
       $("pjMedia").innerHTML = kind === "vid"
-        ? '<video src="site/' + esc(p.video) + '" controls playsinline muted autoplay loop></video>'
-        : '<img src="site/' + esc(p.dashboard || p.thumbnail) + '" alt="' + esc(T("Dashboard for ", "لوحة ") + L(p.title)) + '">';
+        ? '<video src="' + esc(src(p.video)) + '" controls playsinline muted autoplay loop></video>'
+        : '<img src="' + esc(src(p.dashboard || p.thumbnail)) + '" alt="' + esc(T("Dashboard for ", "لوحة ") + L(p.title)) + '">';
     }
     media("img");
     w.querySelectorAll(".pj-switch button").forEach(function (b) {
@@ -580,6 +588,28 @@
   window.addEventListener("hashchange", route);
 
   render(); route();
+
+  /* ---------- new GitHub projects show up by themselves, after the ones in projects.js ----------
+     repos.json is refreshed every six hours by .github/workflows/update-repos.yml.
+     The repository topic picks the type: design, app or business-analysis. Anything else is data analysis. */
+  var GH_TYPE = { "design": "design", "ui-design": "design", "ux-design": "design", "graphic-design": "design", "digital-design": "design", "figma": "design",
+    "app": "app", "web-app": "app", "mobile-app": "app", "business-analysis": "business", "business-analyst": "business", "business": "business" };
+  fetch("repos.json", { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (d) {
+    var known = {}, added = 0;
+    P.forEach(function (p) { if (p.github) known[String(p.github).toLowerCase().replace(/\/+$/, "")] = 1; });
+    (d.repos || []).forEach(function (r) {
+      var url = String(r.url || "").replace(/\/+$/, "");
+      if (!/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+$/.test(url) || known[url.toLowerCase()]) return;
+      var type = "data";
+      (r.topics || []).some(function (t) { return GH_TYPE[t] ? (type = GH_TYPE[t], true) : false; });
+      var name = String(r.name || "").replace(/[-_]+/g, " ").trim();
+      var desc = String(r.description || "");
+      P.push({ id: "gh-" + String(r.name).toLowerCase(), type: type, fromGithub: true, title: { en: name, ar: name }, cardTitle: name,
+        thumbnail: /^https:\/\//.test(r.image || "") ? r.image : "", github: url, goal: { en: desc, ar: desc }, tools: r.language ? [r.language] : [] });
+      known[url.toLowerCase()] = 1; added++;
+    });
+    if (added) { projects(); if (/^#p\/gh-/.test(location.hash)) route(); }
+  }).catch(function () { /* no list: the projects above still show */ });
 
   /* ---------- loading screen, then the page opens ---------- */
   var box = $("loader");

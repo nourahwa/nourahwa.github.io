@@ -13,9 +13,14 @@ My portfolio, built like a desktop. Projects, notes, a CV request and a contact 
 | Pinned visitor notes | `pinned.json` (drawings go in `pinned/`) |
 | Visitor counter and the FormSubmit code | `config.js` |
 
-New public repositories show up in the Projects folder by themselves:
-`.github/workflows/update-repos.yml` runs `automation/update_repos.py` every six hours
-and updates `repos.json`.
+New public repositories show up on the main page by themselves, after the projects in
+`site/content/projects.js`: `.github/workflows/update-repos.yml` runs `automation/update_repos.py`
+every six hours and updates `repos.json`.
+
+- The first picture in the README becomes the project picture, and the repository description becomes its text.
+- Add a topic to the repository to pick its filter: `design`, `app` or `business-analysis`. Without one it goes under Data analysis.
+- To keep a repository off the site, add its name to `SKIP` in `automation/update_repos.py`.
+- To give a project the full case study page, add it to `site/content/projects.js` with the same GitHub link.
 
 ## Writing in the Notebook
 
